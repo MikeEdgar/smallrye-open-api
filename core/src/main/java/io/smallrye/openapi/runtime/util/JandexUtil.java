@@ -2,13 +2,17 @@ package io.smallrye.openapi.runtime.util;
 
 import static java.util.stream.Collectors.toList;
 
+import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -20,6 +24,7 @@ import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.FieldInfo;
 import org.jboss.jandex.IndexView;
+import org.jboss.jandex.Indexer;
 import org.jboss.jandex.MethodInfo;
 import org.jboss.jandex.MethodParameterInfo;
 import org.jboss.jandex.Type;
@@ -35,6 +40,25 @@ import io.smallrye.openapi.runtime.io.schema.SchemaConstant;
 public class JandexUtil {
 
     private static final Pattern COMPONENT_KEY_PATTERN = Pattern.compile("^[a-zA-Z0-9\\.\\-_]+$");
+
+    private static final Map<String, Field> indexerFields = new HashMap<>(2);
+    private static final String INDEXER_FIELDS = "fields";
+    private static final String INDEXER_METHODS = "methods";
+
+    static {
+        saveAccessibleField(Indexer.class, INDEXER_FIELDS, indexerFields);
+        saveAccessibleField(Indexer.class, INDEXER_METHODS, indexerFields);
+    }
+
+    private static void saveAccessibleField(Class<?> clazz, String fieldName, Map<String, Field> indexerFields) {
+        try {
+            Field field = clazz.getDeclaredField(fieldName);
+            field.setAccessible(true); // NOSONAR - work around sorted Jandex fields until supported upstream
+            indexerFields.put(fieldName, field);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
     /**
      * Simple enum to indicate the type of a $ref being read/written.
@@ -658,4 +682,32 @@ public class JandexUtil {
         return p1.method().equals(p2.method()) && p1.position() == p2.position();
     }
 
+    @SuppressWarnings({ "unchecked" })
+    static <T> List<T> getUnsortedMemberInfo(ClassInfo classInfo,
+            String memberType,
+            ClassLoader loader,
+            Function<ClassInfo, List<T>> fallback) {
+
+        if (indexerFields.containsKey(memberType)) {
+            String resourceName = classInfo.name().toString().replace('.', '/').concat(".class");
+
+            try (InputStream classStream = loader.getResourceAsStream(resourceName)) {
+                Indexer i = new Indexer();
+                i.index(classStream);
+                return new ArrayList<>(List.class.cast(indexerFields.get(memberType).get(i)));
+            } catch (Exception e) {
+                UtilLogging.logger.unsortedMemberRetrievalFailed(memberType, classInfo.name().toString());
+            }
+        }
+
+        return fallback.apply(classInfo);
+    }
+
+    public static List<FieldInfo> getUnsortedFieldInfo(ClassInfo classInfo, ClassLoader loader) {
+        return getUnsortedMemberInfo(classInfo, INDEXER_FIELDS, loader, ClassInfo::fields);
+    }
+
+    public static List<MethodInfo> getUnsortedMethodInfo(ClassInfo classInfo, ClassLoader loader) {
+        return getUnsortedMemberInfo(classInfo, INDEXER_METHODS, loader, ClassInfo::methods);
+    }
 }
