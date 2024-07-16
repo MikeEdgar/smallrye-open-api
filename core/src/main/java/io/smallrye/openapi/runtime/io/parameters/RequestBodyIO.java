@@ -69,8 +69,6 @@ public class RequestBodyIO<V, A extends V, O extends V, AB, OB> extends MapModel
         Boolean required = value(annotation, PROP_REQUIRED);
         if (required != null) {
             requestBody.setRequired(required);
-        } else {
-            requestBody.setRequiredDefault(Boolean.TRUE);
         }
         return requestBody;
     }

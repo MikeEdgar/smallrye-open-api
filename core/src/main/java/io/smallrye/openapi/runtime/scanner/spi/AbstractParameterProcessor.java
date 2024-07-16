@@ -46,7 +46,7 @@ import org.jboss.jandex.Type;
 import io.smallrye.openapi.api.models.media.ContentImpl;
 import io.smallrye.openapi.api.models.media.EncodingImpl;
 import io.smallrye.openapi.api.models.media.MediaTypeImpl;
-import io.smallrye.openapi.api.models.media.SchemaImpl;
+import io.smallrye.openapi.api.models.media.SmallRyeSchema;
 import io.smallrye.openapi.api.models.parameters.ParameterImpl;
 import io.smallrye.openapi.api.util.MergeUtil;
 import io.smallrye.openapi.runtime.io.Names;
@@ -463,7 +463,7 @@ public abstract class AbstractParameterProcessor {
 
             if (schemas.isEmpty()) {
                 // ParameterContext was generated above or no @Schema was provided on the @Parameter style=matrix
-                Schema schema = new SchemaImpl();
+                Schema schema = SmallRyeSchema.newInstance();
                 schema.addType(SchemaType.OBJECT);
                 ModelUtil.setParameterSchema(context.oaiParam, schema);
                 schemas = Arrays.asList(schema);
@@ -569,7 +569,7 @@ public abstract class AbstractParameterProcessor {
             }
 
             // readSchema *may* replace the existing schema, so we must assign.
-            schema = SchemaFactory.readSchema(scannerContext, new SchemaImpl(), schemaAnnotation, defaults);
+            schema = SchemaFactory.readSchema(scannerContext, SmallRyeSchema.newInstance(), schemaAnnotation, defaults);
         } else {
             schema = SchemaFactory.typeToSchema(scannerContext, context.targetType, schemaAnnotation, extensions);
         }
@@ -624,16 +624,16 @@ public abstract class AbstractParameterProcessor {
             Schema refSchema = ModelUtil.getComponent(scannerContext.getOpenApi(), ref);
 
             if (refSchema != null) {
-                localSchema = new SchemaImpl().type(refSchema.getType());
+                localSchema = SmallRyeSchema.newInstance().type(refSchema.getType());
             } else {
-                localSchema = new SchemaImpl().addType(SchemaType
+                localSchema = SmallRyeSchema.newInstance().type(SchemaType
                         .valueOf(TypeUtil.getTypeAttributes(paramType).get(SchemaConstant.PROP_TYPE).toString().toUpperCase()));
             }
         } else {
             localSchema = paramSchema;
         }
 
-        int modCount = SchemaImpl.getModCount(localSchema);
+        int modCount = SmallRyeSchema.getModCount(localSchema);
 
         if (beanValidationScanner.isPresent()) {
             beanValidationScanner.get().applyConstraints(context.target, localSchema, param.getName(),
@@ -648,13 +648,15 @@ public abstract class AbstractParameterProcessor {
 
         if (localOnlySchemaModified(paramSchema, localSchema, modCount)) {
             // Add new `allOf` schema, erasing `type` derived above from the local schema
-            Schema allOf = new SchemaImpl().addAllOf(paramSchema).addAllOf(localSchema.type((List<SchemaType>) null));
+            Schema allOf = SmallRyeSchema.newInstance().addAllOf(paramSchema)
+                    .addAllOf(localSchema.type((List<SchemaType>) null));
             param.setSchema(allOf);
         }
     }
 
     boolean localOnlySchemaModified(Schema paramSchema, Schema localSchema, int originalModCount) {
-        return localSchema != paramSchema && originalModCount != -1 && SchemaImpl.getModCount(localSchema) > originalModCount;
+        return localSchema != paramSchema && originalModCount != -1
+                && SmallRyeSchema.getModCount(localSchema) > originalModCount;
     }
 
     /**
@@ -697,8 +699,8 @@ public abstract class AbstractParameterProcessor {
                         (target, name) -> setRequired(name, schema));
             }
 
-            if (SchemaImpl.getNullable(paramSchema) == null && TypeUtil.isOptional(paramType)) {
-                SchemaImpl.setNullable(paramSchema, Boolean.TRUE);
+            if (SmallRyeSchema.getNullable(paramSchema) == null && TypeUtil.isOptional(paramType)) {
+                SmallRyeSchema.setNullable(paramSchema, Boolean.TRUE);
             }
 
             if (schema.getProperties() != null) {
@@ -752,7 +754,7 @@ public abstract class AbstractParameterProcessor {
         Arrays.stream(getFormMediaTypes(scannerContext::getCurrentConsumes, this::getFormMediaType))
                 .forEach(mediaTypeName -> {
                     MediaType mediaType = new MediaTypeImpl();
-                    Schema schema = new SchemaImpl();
+                    Schema schema = SmallRyeSchema.newInstance();
                     Map<String, Encoding> encodings = new HashMap<>();
                     schema.addType(SchemaType.OBJECT);
                     mediaType.setSchema(schema);

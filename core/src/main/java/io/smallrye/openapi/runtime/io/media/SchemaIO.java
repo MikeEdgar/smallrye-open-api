@@ -46,7 +46,7 @@ import org.eclipse.microprofile.openapi.models.servers.ServerVariable;
 import org.eclipse.microprofile.openapi.models.tags.Tag;
 import org.jboss.jandex.AnnotationInstance;
 
-import io.smallrye.openapi.api.models.media.SchemaImpl;
+import io.smallrye.openapi.api.models.media.SmallRyeSchema;
 import io.smallrye.openapi.api.models.media.XMLImpl;
 import io.smallrye.openapi.runtime.io.IOContext;
 import io.smallrye.openapi.runtime.io.IoLogging;
@@ -77,7 +77,7 @@ public class SchemaIO<V, A extends V, O extends V, AB, OB> extends MapModelIO<Sc
 
     @Override
     protected Schema read(String name, AnnotationInstance annotation) {
-        return SchemaFactory.readSchema(scannerContext(), new SchemaImpl(name), annotation, Collections.emptyMap());
+        return SchemaFactory.readSchema(scannerContext(), SmallRyeSchema.newInstance(name), annotation, Collections.emptyMap());
     }
 
     @Override
@@ -87,7 +87,7 @@ public class SchemaIO<V, A extends V, O extends V, AB, OB> extends MapModelIO<Sc
         }
 
         if (jsonIO().isBoolean(node)) {
-            return new SchemaImpl().booleanSchema(jsonIO().asBoolean(node));
+            return SmallRyeSchema.newInstance().booleanSchema(jsonIO().asBoolean(node));
         }
 
         if (jsonIO().isObject(node)) {
@@ -102,7 +102,7 @@ public class SchemaIO<V, A extends V, O extends V, AB, OB> extends MapModelIO<Sc
     public Schema readObject(O node) {
         IoLogging.logger.singleJsonObject("Schema");
         String name = getName(node);
-        SchemaImpl schema = new SchemaImpl(name);
+        SmallRyeSchema schema = SmallRyeSchema.newInstance(name);
         String dialect = jsonIO().getString(node, SchemaConstant.PROP_SCHEMA_DIALECT);
         if (dialect == null || dialect.equals(SchemaConstant.DIALECT_OAS31)
                 || dialect.equals(SchemaConstant.DIALECT_JSON_2020_12)) {
@@ -113,7 +113,7 @@ public class SchemaIO<V, A extends V, O extends V, AB, OB> extends MapModelIO<Sc
         return schema;
     }
 
-    private void populateSchemaObject(SchemaImpl schema, O node) {
+    private void populateSchemaObject(SmallRyeSchema schema, O node) {
         Map<String, Object> dataMap = schema.getDataMap();
 
         // Special handling for type since it can be an array or a string and we want to convert
@@ -246,7 +246,7 @@ public class SchemaIO<V, A extends V, O extends V, AB, OB> extends MapModelIO<Sc
             return jsonIO().toJson(model.getBooleanSchema());
         }
 
-        SchemaImpl impl = (SchemaImpl) model;
+        SmallRyeSchema impl = (SmallRyeSchema) model;
         Map<String, Object> data = impl.getDataMap();
         return writeMap(data);
     }

@@ -5,6 +5,7 @@ import org.eclipse.microprofile.openapi.models.parameters.RequestBody;
 
 import io.smallrye.openapi.api.models.ExtensibleImpl;
 import io.smallrye.openapi.api.models.ModelImpl;
+import io.smallrye.openapi.api.util.VersionUtil;
 import io.smallrye.openapi.runtime.io.ReferenceType;
 
 /**
@@ -16,7 +17,6 @@ public class RequestBodyImpl extends ExtensibleImpl<RequestBody> implements Requ
     private String description;
     private Content content;
     private Boolean required;
-    private Boolean requiredDefault;
     private boolean isRequiredSet = false;
 
     /**
@@ -78,7 +78,7 @@ public class RequestBodyImpl extends ExtensibleImpl<RequestBody> implements Requ
         if (isRequiredSet) {
             return this.required;
         } else {
-            return this.requiredDefault;
+            return VersionUtil.VER4 ? Boolean.TRUE : null;
         }
     }
 
@@ -89,19 +89,6 @@ public class RequestBodyImpl extends ExtensibleImpl<RequestBody> implements Requ
     public void setRequired(Boolean required) {
         this.required = required;
         isRequiredSet = true;
-    }
-
-    /**
-     * Sets the value to use for {@code required} if {@link #setRequired(Boolean)} has not been called.
-     * <p>
-     * If this method is called, {@link #getRequired()} will return this value unless {@link #setRequired(Boolean)} is called.
-     *
-     * @param requiredDefault the default value for {@code required}
-     * @return this instance
-     */
-    public RequestBodyImpl setRequiredDefault(Boolean requiredDefault) {
-        this.requiredDefault = requiredDefault;
-        return this;
     }
 
     /**

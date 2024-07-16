@@ -22,7 +22,7 @@ import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.FieldInfo;
 import org.jboss.jandex.Type;
 
-import io.smallrye.openapi.api.models.media.SchemaImpl;
+import io.smallrye.openapi.api.models.media.SmallRyeSchema;
 import io.smallrye.openapi.api.models.media.XMLImpl;
 import io.smallrye.openapi.api.util.MergeUtil;
 import io.smallrye.openapi.runtime.io.schema.SchemaConstant;
@@ -146,7 +146,7 @@ public class AnnotationTargetProcessor implements RequirementHandler {
         } else {
             // Process the type of the field to derive the typeSchema
             typeProcessor = new TypeProcessor(context, objectStack, parentPathEntry, typeResolver, entityType,
-                    new SchemaImpl(), annotationTarget);
+                    SmallRyeSchema.newInstance(), annotationTarget);
 
             // Type could be replaced (e.g. generics)
             fieldType = typeProcessor.processType();
@@ -180,10 +180,10 @@ public class AnnotationTargetProcessor implements RequirementHandler {
             fieldSchema = readSchemaAnnotatedField(propertyKey, schemaAnnotation, fieldType);
         } else if (registrationCandidate) {
             // The type schema was registered, start with empty schema for the field using the type from the field type's schema
-            fieldSchema = new SchemaImpl().type(typeSchema.getType());
+            fieldSchema = SmallRyeSchema.newInstance().type(typeSchema.getType());
         } else {
             // Use the type's schema for the field as a starting point (poor man's clone)
-            fieldSchema = MergeUtil.mergeObjects(new SchemaImpl(), typeSchema);
+            fieldSchema = MergeUtil.mergeObjects(SmallRyeSchema.newInstance(), typeSchema);
         }
 
         Optional<BeanValidationScanner> constraintScanner = context.getBeanValidationScanner();
@@ -195,8 +195,8 @@ public class AnnotationTargetProcessor implements RequirementHandler {
             }
         }
 
-        if (SchemaImpl.getNullable(fieldSchema) == null && TypeUtil.isOptional(entityType)) {
-            SchemaImpl.setNullable(fieldSchema, Boolean.TRUE);
+        if (SmallRyeSchema.getNullable(fieldSchema) == null && TypeUtil.isOptional(entityType)) {
+            SmallRyeSchema.setNullable(fieldSchema, Boolean.TRUE);
         }
 
         if (fieldSchema.getReadOnly() == null && typeResolver.isReadOnly()) {
@@ -246,21 +246,21 @@ public class AnnotationTargetProcessor implements RequirementHandler {
                     // Field declaration overrides a schema annotation (non-validating), add referenced type to `allOf` if not user-provided
                     TypeUtil.clearMatchingDefaultAttributes(fieldSchema, typeSchema);
                     fieldSchema.setRef(registeredTypeSchema.getRef());
-                    SchemaImpl.addTypeObserver(typeSchema, fieldSchema);
+                    SmallRyeSchema.addTypeObserver(typeSchema, fieldSchema);
                 } else {
                     fieldSchema = registeredTypeSchema; // Reference to the type schema
                 }
 
                 // If the field should allow null but the type schema doesn't, use anyOf to allow null
                 if (fieldSchemaNullable && !isNullable(typeSchema)) {
-                    Schema nullSchema = new SchemaImpl().type(singletonList(Schema.SchemaType.NULL));
+                    Schema nullSchema = SmallRyeSchema.newInstance().type(singletonList(Schema.SchemaType.NULL));
                     // Move reference to type into its own subschema
-                    Schema refSchema = new SchemaImpl().ref(fieldSchema.getRef());
+                    Schema refSchema = SmallRyeSchema.newInstance().ref(fieldSchema.getRef());
                     fieldSchema.setRef(null);
                     if (fieldSchema.getAnyOf() == null) {
                         fieldSchema.addAnyOf(refSchema).addAnyOf(nullSchema);
                     } else {
-                        Schema anyOfSchema = new SchemaImpl().addAnyOf(refSchema).addAnyOf(nullSchema);
+                        Schema anyOfSchema = SmallRyeSchema.newInstance().addAnyOf(refSchema).addAnyOf(nullSchema);
                         fieldSchema.addAllOf(anyOfSchema);
                     }
                 }
@@ -369,7 +369,7 @@ public class AnnotationTargetProcessor implements RequirementHandler {
         }
 
         // readSchema *may* replace the existing schema, so we must assign.
-        return SchemaFactory.readSchema(context, new SchemaImpl(), annotation, defaults);
+        return SchemaFactory.readSchema(context, SmallRyeSchema.newInstance(), annotation, defaults);
     }
 
     boolean fieldAssertionConflicts(Schema fieldSchema, Schema typeSchema) {

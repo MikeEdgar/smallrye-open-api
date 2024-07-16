@@ -1,6 +1,5 @@
 package io.smallrye.openapi.runtime.scanner.spi;
 
-import static java.util.Collections.singletonList;
 import static org.jboss.jandex.AnnotationTarget.Kind.METHOD_PARAMETER;
 
 import java.util.ArrayList;
@@ -47,7 +46,7 @@ import io.smallrye.openapi.api.models.OpenAPIImpl;
 import io.smallrye.openapi.api.models.OperationImpl;
 import io.smallrye.openapi.api.models.media.ContentImpl;
 import io.smallrye.openapi.api.models.media.MediaTypeImpl;
-import io.smallrye.openapi.api.models.media.SchemaImpl;
+import io.smallrye.openapi.api.models.media.SmallRyeSchema;
 import io.smallrye.openapi.api.models.parameters.RequestBodyImpl;
 import io.smallrye.openapi.api.models.responses.APIResponseImpl;
 import io.smallrye.openapi.api.util.MergeUtil;
@@ -457,7 +456,7 @@ public interface AnnotationScanner {
                 Schema schema;
 
                 if (isMultipartOutput(returnType)) {
-                    schema = new SchemaImpl().addType(Schema.SchemaType.OBJECT);
+                    schema = SmallRyeSchema.newInstance().type(Schema.SchemaType.OBJECT);
                 } else if (hasKotlinContinuation(method)) {
                     schema = kotlinContinuationToSchema(context, method);
                 } else {
@@ -471,19 +470,19 @@ public interface AnnotationScanner {
                     produces = getDefaultProduces(context, method);
                 }
 
-                if (schema != null && SchemaImpl.getNullable(schema) == null && TypeUtil.isOptional(returnType)) {
+                if (schema != null && SmallRyeSchema.getNullable(schema) == null && TypeUtil.isOptional(returnType)) {
                     if (schema.getType() != null) {
                         schema.addType(Schema.SchemaType.NULL);
                     }
                     if (schema.getRef() != null) {
-                        Schema nullSchema = new SchemaImpl().type(singletonList(Schema.SchemaType.NULL));
+                        Schema nullSchema = SmallRyeSchema.newInstance().type(Schema.SchemaType.NULL);
                         // Move reference to type into its own subschema
-                        Schema refSchema = new SchemaImpl().ref(schema.getRef());
+                        Schema refSchema = SmallRyeSchema.newInstance().ref(schema.getRef());
                         schema.setRef(null);
                         if (schema.getAnyOf() == null) {
                             schema.addAnyOf(refSchema).addAnyOf(nullSchema);
                         } else {
-                            Schema anyOfSchema = new SchemaImpl().addAnyOf(refSchema).addAnyOf(nullSchema);
+                            Schema anyOfSchema = SmallRyeSchema.newInstance().addAnyOf(refSchema).addAnyOf(nullSchema);
                             schema.addAllOf(anyOfSchema);
                         }
                     }
@@ -818,7 +817,7 @@ public interface AnnotationScanner {
                 && getConsumes(context) != null) {
             if (params.getFormBodyContent() != null) {
                 if (requestBody == null) {
-                    requestBody = new RequestBodyImpl().setRequiredDefault(Boolean.TRUE);
+                    requestBody = new RequestBodyImpl();
                 }
                 requestBody.setContent(params.getFormBodyContent());
             } else {
@@ -833,7 +832,7 @@ public interface AnnotationScanner {
                     Schema schema = null;
 
                     if (isMultipartInput(requestBodyType)) {
-                        schema = new SchemaImpl();
+                        schema = SmallRyeSchema.newInstance();
                         schema.addType(Schema.SchemaType.OBJECT);
                     } else {
                         AnnotationInstance schemaAnnotation = context.annotations().getMethodParameterAnnotation(method,
@@ -844,7 +843,7 @@ public interface AnnotationScanner {
                     }
 
                     if (requestBody == null) {
-                        requestBody = new RequestBodyImpl().setRequiredDefault(Boolean.TRUE);
+                        requestBody = new RequestBodyImpl();
                     }
 
                     if (schema != null) {
