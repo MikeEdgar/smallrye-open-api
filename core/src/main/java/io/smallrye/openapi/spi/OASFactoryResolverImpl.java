@@ -55,7 +55,7 @@ import io.smallrye.openapi.api.models.media.ContentImpl;
 import io.smallrye.openapi.api.models.media.DiscriminatorImpl;
 import io.smallrye.openapi.api.models.media.EncodingImpl;
 import io.smallrye.openapi.api.models.media.MediaTypeImpl;
-import io.smallrye.openapi.api.models.media.SchemaImpl;
+import io.smallrye.openapi.api.models.media.SmallRyeSchema;
 import io.smallrye.openapi.api.models.media.XMLImpl;
 import io.smallrye.openapi.api.models.parameters.ParameterImpl;
 import io.smallrye.openapi.api.models.parameters.RequestBodyImpl;
@@ -107,7 +107,7 @@ public class OASFactoryResolverImpl extends OASFactoryResolver {
             registry.put(PathItem.class, PathItemImpl::new);
             registry.put(Paths.class, PathsImpl::new);
             registry.put(RequestBody.class, RequestBodyImpl::new);
-            registry.put(Schema.class, SchemaImpl::new);
+            registry.put(Schema.class, SmallRyeSchema::newInstance);
             registry.put(SecurityRequirement.class, SecurityRequirementImpl::new);
             registry.put(SecurityScheme.class, SecuritySchemeImpl::new);
             registry.put(Server.class, ServerImpl::new);

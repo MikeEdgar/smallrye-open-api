@@ -55,7 +55,7 @@ import org.eclipse.microprofile.openapi.models.servers.ServerVariable;
 import org.eclipse.microprofile.openapi.models.tags.Tag;
 import org.jboss.jandex.AnnotationInstance;
 
-import io.smallrye.openapi.api.models.media.SchemaImpl;
+import io.smallrye.openapi.api.models.media.SmallRyeSchema;
 import io.smallrye.openapi.api.models.media.XMLImpl;
 import io.smallrye.openapi.runtime.io.IOContext;
 import io.smallrye.openapi.runtime.io.IOContext.OpenApiVersion;
@@ -88,7 +88,7 @@ public class SchemaIO<V, A extends V, O extends V, AB, OB> extends MapModelIO<Sc
 
     @Override
     protected Schema read(String name, AnnotationInstance annotation) {
-        return SchemaFactory.readSchema(scannerContext(), new SchemaImpl(name), annotation, Collections.emptyMap());
+        return SchemaFactory.readSchema(scannerContext(), SmallRyeSchema.newInstance(name), annotation, Collections.emptyMap());
     }
 
     @Override
@@ -98,7 +98,7 @@ public class SchemaIO<V, A extends V, O extends V, AB, OB> extends MapModelIO<Sc
         }
 
         if (jsonIO().isBoolean(node)) {
-            return new SchemaImpl().booleanSchema(jsonIO().asBoolean(node));
+            return SmallRyeSchema.newInstance().booleanSchema(jsonIO().asBoolean(node));
         }
 
         if (jsonIO().isObject(node)) {
@@ -113,7 +113,7 @@ public class SchemaIO<V, A extends V, O extends V, AB, OB> extends MapModelIO<Sc
     public Schema readObject(O node) {
         IoLogging.logger.singleJsonObject("Schema");
         String name = getName(node);
-        SchemaImpl schema = new SchemaImpl(name);
+        SmallRyeSchema schema = SmallRyeSchema.newInstance(name);
 
         if (openApiVersion() == OpenApiVersion.V3_1) {
             String dialect = jsonIO().getString(node, SchemaConstant.PROP_SCHEMA_DIALECT);
@@ -129,7 +129,7 @@ public class SchemaIO<V, A extends V, O extends V, AB, OB> extends MapModelIO<Sc
         return schema;
     }
 
-    private void populateSchemaObject(SchemaImpl schema, O node) {
+    private void populateSchemaObject(SmallRyeSchema schema, O node) {
         Map<String, Object> dataMap = schema.getDataMap();
 
         // Special handling for type since it can be an array or a string and we want to convert
@@ -164,12 +164,12 @@ public class SchemaIO<V, A extends V, O extends V, AB, OB> extends MapModelIO<Sc
         }
     }
 
-    private void populateSchemaObject30(SchemaImpl schema, O node) {
+    private void populateSchemaObject30(SmallRyeSchema schema, O node) {
         Map<String, Object> dataMap = schema.getDataMap();
 
         // Call our internal methods for type/nullable handling
-        SchemaImpl.setType(schema, enumValue(jsonIO().getValue(node, PROP_TYPE), Schema.SchemaType.class));
-        SchemaImpl.setNullable(schema, jsonIO().getBoolean(node, PROP_NULLABLE));
+        SmallRyeSchema.setType(schema, enumValue(jsonIO().getValue(node, PROP_TYPE), Schema.SchemaType.class));
+        SmallRyeSchema.setNullable(schema, jsonIO().getBoolean(node, PROP_NULLABLE));
 
         // Translate minimum
         BigDecimal minimum = jsonIO().getBigDecimal(node, PROP_MINIMUM);
@@ -222,17 +222,17 @@ public class SchemaIO<V, A extends V, O extends V, AB, OB> extends MapModelIO<Sc
         }
 
         // Detect {$ref=....,nullable=true} and convert to anyOf[{$ref=...}, {type=null}]
-        if (schema.getRef() != null && schema.getType() == null && SchemaImpl.getNullable(schema) == Boolean.TRUE) {
+        if (schema.getRef() != null && schema.getType() == null && SmallRyeSchema.getNullable(schema) == Boolean.TRUE) {
             List<Schema> newAnyOfSchemas = new ArrayList<>();
-            newAnyOfSchemas.add(new SchemaImpl().ref(schema.getRef()));
-            newAnyOfSchemas.add(new SchemaImpl().addType(SchemaType.NULL));
+            newAnyOfSchemas.add(SmallRyeSchema.newInstance().ref(schema.getRef()));
+            newAnyOfSchemas.add(SmallRyeSchema.newInstance().addType(SchemaType.NULL));
             if (schema.getAnyOf() == null || schema.getAnyOf().isEmpty()) {
                 schema.setAnyOf(newAnyOfSchemas);
             } else {
-                schema.addAllOf(new SchemaImpl().anyOf(newAnyOfSchemas));
+                schema.addAllOf(SmallRyeSchema.newInstance().anyOf(newAnyOfSchemas));
             }
             schema.setRef(null);
-            SchemaImpl.setNullable(schema, null);
+            SmallRyeSchema.setNullable(schema, null);
         }
 
         // Detect {enum=[null]} and convert to {type=null}
@@ -354,7 +354,7 @@ public class SchemaIO<V, A extends V, O extends V, AB, OB> extends MapModelIO<Sc
             return jsonIO().toJson(model.getBooleanSchema());
         }
 
-        SchemaImpl impl = (SchemaImpl) model;
+        SmallRyeSchema impl = (SmallRyeSchema) model;
         Map<String, Object> data = impl.getDataMap();
         return writeMap(data);
     }
@@ -421,7 +421,7 @@ public class SchemaIO<V, A extends V, O extends V, AB, OB> extends MapModelIO<Sc
         List<SchemaType> types = schema31.getType();
         if (types != null) {
             result.type = types.stream().filter(t -> t != SchemaType.NULL).findFirst().orElse(null);
-            result.nullable = SchemaImpl.getNullable(schema31);
+            result.nullable = SmallRyeSchema.getNullable(schema31);
         }
 
         // Convert type=null to enum=[null] and const=value to enum=[value]
@@ -476,7 +476,7 @@ public class SchemaIO<V, A extends V, O extends V, AB, OB> extends MapModelIO<Sc
         // If $ref is used with any other properties, move it to an allOf
         if (result.ref != null && !isSoloRef(schema31)) {
             result.ref = null;
-            Schema refSchema = new SchemaImpl().ref(schema31.getRef());
+            Schema refSchema = SmallRyeSchema.newInstance().ref(schema31.getRef());
             result.allOf = ModelUtil.replace(result.allOf, ArrayList::new); // replace first because result.allOf may be immutable
             result.allOf = ModelUtil.add(refSchema, result.allOf, ArrayList::new);
         }
@@ -622,10 +622,10 @@ public class SchemaIO<V, A extends V, O extends V, AB, OB> extends MapModelIO<Sc
      * @return {@code true} if {@code schema} has one property and it's named {@code $ref}, otherwise {@code false}
      */
     private static boolean isSoloRef(Schema schema) {
-        if (!(schema instanceof SchemaImpl)) {
+        if (!(schema instanceof SmallRyeSchema)) {
             return false;
         }
-        SchemaImpl s = (SchemaImpl) schema;
+        SmallRyeSchema s = (SmallRyeSchema) schema;
         Map<String, Object> data = s.getDataMap();
         return data.size() == 1 && data.containsKey(PROP_REF);
     }
@@ -638,10 +638,10 @@ public class SchemaIO<V, A extends V, O extends V, AB, OB> extends MapModelIO<Sc
      *         otherwise {@code false}
      */
     private static boolean isSoloTypeNull(Schema schema) {
-        if (!(schema instanceof SchemaImpl)) {
+        if (!(schema instanceof SmallRyeSchema)) {
             return false;
         }
-        SchemaImpl s = (SchemaImpl) schema;
+        SmallRyeSchema s = (SmallRyeSchema) schema;
         Map<String, Object> data = s.getDataMap();
         return data.size() == 1 && s.getType() != null && s.getType().equals(Collections.singletonList(SchemaType.NULL));
     }

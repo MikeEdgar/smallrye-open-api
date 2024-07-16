@@ -27,8 +27,9 @@ import org.jboss.jandex.Type.Kind;
 
 import io.smallrye.openapi.api.constants.JDKConstants;
 import io.smallrye.openapi.api.constants.MutinyConstants;
-import io.smallrye.openapi.api.models.media.SchemaImpl;
+import io.smallrye.openapi.api.models.media.SmallRyeSchema;
 import io.smallrye.openapi.api.util.MergeUtil;
+import io.smallrye.openapi.api.util.VersionUtil;
 import io.smallrye.openapi.runtime.io.IoLogging;
 import io.smallrye.openapi.runtime.scanner.AnnotationScannerExtension;
 import io.smallrye.openapi.runtime.scanner.OpenApiDataObjectScanner;
@@ -74,7 +75,7 @@ public class SchemaFactory {
             return null;
         }
 
-        return readSchema(context, new SchemaImpl(), schemaAnnotation, Collections.emptyMap());
+        return readSchema(context, SmallRyeSchema.newInstance(), schemaAnnotation, Collections.emptyMap());
     }
 
     /**
@@ -156,12 +157,14 @@ public class SchemaFactory {
                 types -> readClassSchemas(context, types, false), defaults));
         schema.setAllOf(SchemaFactory.<Type[], List<Schema>> readAttr(context, annotation, SchemaConstant.PROP_ALL_OF,
                 types -> readClassSchemas(context, types, true), defaults));
-        schema.setIfSchema(SchemaFactory.<Type, Schema> readAttr(context, annotation, SchemaConstant.PROP_IF_SCHEMA,
-                types -> readClassSchema(context, types, true), defaults));
-        schema.setThenSchema(SchemaFactory.<Type, Schema> readAttr(context, annotation, SchemaConstant.PROP_THEN_SCHEMA,
-                types -> readClassSchema(context, types, true), defaults));
-        schema.setElseSchema(SchemaFactory.<Type, Schema> readAttr(context, annotation, SchemaConstant.PROP_ELSE_SCHEMA,
-                types -> readClassSchema(context, types, true), defaults));
+        if (VersionUtil.VER4) {
+            schema.setIfSchema(SchemaFactory.<Type, Schema> readAttr(context, annotation, SchemaConstant.PROP_IF_SCHEMA,
+                    types -> readClassSchema(context, types, true), defaults));
+            schema.setThenSchema(SchemaFactory.<Type, Schema> readAttr(context, annotation, SchemaConstant.PROP_THEN_SCHEMA,
+                    types -> readClassSchema(context, types, true), defaults));
+            schema.setElseSchema(SchemaFactory.<Type, Schema> readAttr(context, annotation, SchemaConstant.PROP_ELSE_SCHEMA,
+                    types -> readClassSchema(context, types, true), defaults));
+        }
         schema.setTitle(readAttr(context, annotation, SchemaConstant.PROP_TITLE, defaults));
         schema.setMultipleOf(SchemaFactory.<Double, BigDecimal> readAttr(context, annotation, SchemaConstant.PROP_MULTIPLE_OF,
                 BigDecimal::valueOf, defaults));
@@ -191,14 +194,14 @@ public class SchemaFactory {
         schema.setRequired(readAttr(context, annotation, SchemaConstant.PROP_REQUIRED_PROPERTIES, defaults));
         schema.setDescription(readAttr(context, annotation, SchemaConstant.PROP_DESCRIPTION, defaults));
         schema.setFormat(readAttr(context, annotation, SchemaConstant.PROP_FORMAT, defaults));
-        SchemaImpl.setNullable(schema, readAttr(context, annotation, SchemaConstant.PROP_NULLABLE, defaults));
+        SmallRyeSchema.setNullable(schema, readAttr(context, annotation, SchemaConstant.PROP_NULLABLE, defaults));
         schema.setReadOnly(readAttr(context, annotation, SchemaConstant.PROP_READ_ONLY, defaults));
         schema.setWriteOnly(readAttr(context, annotation, SchemaConstant.PROP_WRITE_ONLY, defaults));
         schema.setExternalDocs(context.io().extDocIO().read(annotation.value(SchemaConstant.PROP_EXTERNAL_DOCS)));
         schema.setDeprecated(readAttr(context, annotation, SchemaConstant.PROP_DEPRECATED, defaults));
 
         final SchemaType type = readSchemaType(context, annotation, schema, defaults);
-        SchemaImpl.setType(schema, type);
+        SmallRyeSchema.setType(schema, type);
 
         Object example = parseSchemaAttr(context, annotation, SchemaConstant.PROP_EXAMPLE, defaults, type);
         List<Object> examples = SchemaFactory.<String[], List<Object>> readAttr(context, annotation,
@@ -224,7 +227,9 @@ public class SchemaFactory {
         schema.setUniqueItems(readAttr(context, annotation, SchemaConstant.PROP_UNIQUE_ITEMS, defaults));
         schema.setExtensions(context.io().extensionIO().readExtensible(annotation));
         schema.setComment(readAttr(context, annotation, SchemaConstant.PROP_COMMENT_FIELD, defaults));
-        schema.setConstValue(parseSchemaAttr(context, annotation, SchemaConstant.PROP_CONST_VALUE, defaults, type));
+        if (VersionUtil.VER4) {
+            schema.setConstValue(parseSchemaAttr(context, annotation, SchemaConstant.PROP_CONST_VALUE, defaults, type));
+        }
 
         schema.setProperties(SchemaFactory.<AnnotationInstance[], Map<String, Schema>> readAttr(context, annotation,
                 SchemaConstant.PROP_PROPERTIES, properties -> {
@@ -234,7 +239,8 @@ public class SchemaFactory {
                     Map<String, Schema> propertySchemas = new LinkedHashMap<>(properties.length);
                     for (AnnotationInstance propAnnotation : properties) {
                         String key = context.annotations().value(propAnnotation, SchemaConstant.PROP_NAME);
-                        Schema value = readSchema(context, new SchemaImpl(), propAnnotation, Collections.emptyMap());
+                        Schema value = readSchema(context, SmallRyeSchema.newInstance(), propAnnotation,
+                                Collections.emptyMap());
                         propertySchemas.put(key, value);
                     }
 
@@ -245,31 +251,35 @@ public class SchemaFactory {
                 SchemaFactory.<Type, Schema> readAttr(context, annotation, SchemaConstant.PROP_ADDITIONAL_PROPERTIES,
                         types -> readClassSchema(context, types, true), defaults));
 
-        schema.setDependentRequired(SchemaFactory.<AnnotationInstance[], Map<String, List<String>>> readAttr(context,
-                annotation, SchemaConstant.PROP_DEPENDENT_REQUIRED,
-                annos -> readDependentRequired(context, annos), defaults));
+        if (VersionUtil.VER4) {
+            schema.setDependentRequired(SchemaFactory.<AnnotationInstance[], Map<String, List<String>>> readAttr(context,
+                    annotation, SchemaConstant.PROP_DEPENDENT_REQUIRED,
+                    annos -> readDependentRequired(context, annos), defaults));
 
-        schema.setDependentSchemas(SchemaFactory.<AnnotationInstance[], Map<String, Schema>> readAttr(context, annotation,
-                SchemaConstant.PROP_DEPENDENT_SCHEMAS,
-                annos -> readDependentSchemas(context, annos), defaults));
+            schema.setDependentSchemas(SchemaFactory.<AnnotationInstance[], Map<String, Schema>> readAttr(context, annotation,
+                    SchemaConstant.PROP_DEPENDENT_SCHEMAS,
+                    annos -> readDependentSchemas(context, annos), defaults));
 
-        schema.setContentEncoding(readAttr(context, annotation, SchemaConstant.PROP_CONTENT_ENCODING, defaults));
-        schema.setContentMediaType(readAttr(context, annotation, SchemaConstant.PROP_CONTENT_MEDIA_TYPE, defaults));
-        schema.setContentSchema(SchemaFactory.<Type, Schema> readAttr(context, annotation, SchemaConstant.PROP_CONTENT_SCHEMA,
-                types -> readClassSchema(context, types, true), defaults));
+            schema.setContentEncoding(readAttr(context, annotation, SchemaConstant.PROP_CONTENT_ENCODING, defaults));
+            schema.setContentMediaType(readAttr(context, annotation, SchemaConstant.PROP_CONTENT_MEDIA_TYPE, defaults));
+            schema.setContentSchema(
+                    SchemaFactory.<Type, Schema> readAttr(context, annotation, SchemaConstant.PROP_CONTENT_SCHEMA,
+                            types -> readClassSchema(context, types, true), defaults));
 
-        schema.setContains(SchemaFactory.<Type, Schema> readAttr(context, annotation, SchemaConstant.PROP_CONTAINS,
-                types -> readClassSchema(context, types, true), defaults));
-        schema.setMaxContains(readAttr(context, annotation, SchemaConstant.PROP_MAX_CONTAINS, defaults));
-        schema.setMinContains(readAttr(context, annotation, SchemaConstant.PROP_MIN_CONTAINS, defaults));
-        schema.setPrefixItems(
-                SchemaFactory.<Type[], List<Schema>> readAttr(context, annotation, SchemaConstant.PROP_PREFIX_ITEMS,
-                        types -> readClassSchemas(context, types, true), defaults));
-        schema.setPropertyNames(SchemaFactory.<Type, Schema> readAttr(context, annotation, SchemaConstant.PROP_PROPERTY_NAMES,
-                types -> readClassSchema(context, types, true), defaults));
-        schema.setPatternProperties(SchemaFactory.<AnnotationInstance[], Map<String, Schema>> readAttr(context, annotation,
-                SchemaConstant.PROP_PATTERN_PROPERTIES,
-                annos -> readPatternProperties(context, annos), defaults));
+            schema.setContains(SchemaFactory.<Type, Schema> readAttr(context, annotation, SchemaConstant.PROP_CONTAINS,
+                    types -> readClassSchema(context, types, true), defaults));
+            schema.setMaxContains(readAttr(context, annotation, SchemaConstant.PROP_MAX_CONTAINS, defaults));
+            schema.setMinContains(readAttr(context, annotation, SchemaConstant.PROP_MIN_CONTAINS, defaults));
+            schema.setPrefixItems(
+                    SchemaFactory.<Type[], List<Schema>> readAttr(context, annotation, SchemaConstant.PROP_PREFIX_ITEMS,
+                            types -> readClassSchemas(context, types, true), defaults));
+            schema.setPropertyNames(
+                    SchemaFactory.<Type, Schema> readAttr(context, annotation, SchemaConstant.PROP_PROPERTY_NAMES,
+                            types -> readClassSchema(context, types, true), defaults));
+            schema.setPatternProperties(SchemaFactory.<AnnotationInstance[], Map<String, Schema>> readAttr(context, annotation,
+                    SchemaConstant.PROP_PATTERN_PROPERTIES,
+                    annos -> readPatternProperties(context, annos), defaults));
+        }
 
         List<Object> enumeration = readAttr(context, annotation, SchemaConstant.PROP_ENUMERATION, (Object[] values) -> {
             List<Object> parsed = new ArrayList<>(values.length);
@@ -290,7 +300,7 @@ public class SchemaFactory {
             schema.setEnumeration(enumeration);
         }
 
-        boolean namedComponent = SchemaImpl.isNamed(schema);
+        boolean namedComponent = SmallRyeSchema.isNamed(schema);
 
         if (JandexUtil.isSimpleClassSchema(annotation)) {
             Schema implSchema = readClassSchema(context,
@@ -512,11 +522,11 @@ public class SchemaFactory {
         }
         Schema schema;
         if (type.name().equals(SchemaConstant.DOTNAME_TRUE_SCHEMA)) {
-            schema = new SchemaImpl().booleanSchema(true);
+            schema = SmallRyeSchema.newInstance().booleanSchema(true);
         } else if (type.name().equals(SchemaConstant.DOTNAME_FALSE_SCHEMA)) {
-            schema = new SchemaImpl().booleanSchema(false);
+            schema = SmallRyeSchema.newInstance().booleanSchema(false);
         } else if (type.kind() == Type.Kind.ARRAY) {
-            schema = new SchemaImpl().addType(SchemaType.ARRAY);
+            schema = SmallRyeSchema.newInstance().type(SchemaType.ARRAY);
             ArrayType array = type.asArrayType();
             int dimensions = array.dimensions();
             Type componentType = array.component();
@@ -581,11 +591,11 @@ public class SchemaFactory {
             schema = typeToSchema(context, currentScanner.get().unwrapType(type), null,
                     extensions);
         } else if (TypeUtil.isTerminalType(type)) {
-            schema = new SchemaImpl();
+            schema = SmallRyeSchema.newInstance();
             TypeUtil.applyTypeAttributes(type, schema);
             schema = schemaRegistration(context, type, schema);
         } else if (type.kind() == Type.Kind.ARRAY) {
-            schema = new SchemaImpl().addType(SchemaType.ARRAY);
+            schema = SmallRyeSchema.newInstance().type(SchemaType.ARRAY);
             ArrayType array = type.asArrayType();
             int dimensions = array.dimensions();
             Type componentType = array.component();
@@ -639,7 +649,7 @@ public class SchemaFactory {
         List<Object> enumeration = EnumProcessor.enumConstants(context, enumType);
         ClassInfo enumKlazz = context.getIndex().getClassByName(TypeUtil.getName(enumType));
         AnnotationInstance schemaAnnotation = context.annotations().getAnnotation(enumKlazz, SchemaConstant.DOTNAME_SCHEMA);
-        Schema enumSchema = new SchemaImpl();
+        Schema enumSchema = SmallRyeSchema.newInstance();
 
         if (schemaAnnotation != null) {
             Map<String, Object> defaults = new HashMap<>(2);
@@ -687,11 +697,11 @@ public class SchemaFactory {
                 return schemaRegistry.lookupRef(ctype, context.getJsonViews());
             } else {
                 // Clone the schema from the registry
-                return SchemaImpl.copyOf(schemaRegistry.lookupSchema(ctype, context.getJsonViews()));
+                return SmallRyeSchema.copyOf(schemaRegistry.lookupSchema(ctype, context.getJsonViews()));
             }
         } else if (context.getScanStack().contains(ctype)) {
             // Protect against stack overflow when the type is in the process of being scanned.
-            return schemaRegistry.registerReference(ctype, context.getJsonViews(), null, new SchemaImpl());
+            return schemaRegistry.registerReference(ctype, context.getJsonViews(), null, SmallRyeSchema.newInstance());
         } else {
             Schema schema = OpenApiDataObjectScanner.process(context, ctype);
 
@@ -772,7 +782,7 @@ public class SchemaFactory {
             List<AnnotationScannerExtension> extensions) {
         if (TypeUtil.isA(context, type, MutinyConstants.MULTI_TYPE)) {
             // Treat as an Array
-            Schema schema = new SchemaImpl().addType(SchemaType.ARRAY);
+            Schema schema = SmallRyeSchema.newInstance().type(SchemaType.ARRAY);
             Type componentType = type.asParameterizedType().arguments().get(0);
 
             // Recurse using the type of the array elements

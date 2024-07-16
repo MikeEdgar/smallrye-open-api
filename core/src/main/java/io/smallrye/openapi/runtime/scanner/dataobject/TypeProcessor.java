@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.microprofile.openapi.models.media.Schema;
-import org.eclipse.microprofile.openapi.models.media.Schema.SchemaType;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget;
 import org.jboss.jandex.ArrayType;
@@ -22,7 +21,7 @@ import org.jboss.jandex.ParameterizedType;
 import org.jboss.jandex.Type;
 import org.jboss.jandex.Type.Kind;
 
-import io.smallrye.openapi.api.models.media.SchemaImpl;
+import io.smallrye.openapi.api.models.media.SmallRyeSchema;
 import io.smallrye.openapi.api.util.MergeUtil;
 import io.smallrye.openapi.runtime.io.schema.SchemaConstant;
 import io.smallrye.openapi.runtime.io.schema.SchemaFactory;
@@ -153,9 +152,7 @@ public class TypeProcessor {
         DataObjectLogging.logger.processingArray(arrayType);
 
         // Array-type schema
-        Schema itemSchema = new SchemaImpl();
-        arraySchema.addType(Schema.SchemaType.ARRAY);
-
+        Schema itemSchema = SmallRyeSchema.newInstance().type(Schema.SchemaType.ARRAY);
         Type componentType = typeResolver.resolve(arrayType.component());
         boolean isOptional = TypeUtil.isOptional(componentType);
 
@@ -178,8 +175,7 @@ public class TypeProcessor {
         }
 
         while (arrayType.dimensions() > 1) {
-            Schema parentArrSchema = new SchemaImpl();
-            parentArrSchema.addType(Schema.SchemaType.ARRAY);
+            Schema parentArrSchema = SmallRyeSchema.newInstance().type(Schema.SchemaType.ARRAY);
             parentArrSchema.setItems(itemSchema);
 
             itemSchema = parentArrSchema;
@@ -203,7 +199,7 @@ public class TypeProcessor {
         // If it's a collection, iterable, or a stream, we should treat it as an array.
         if (seekType != null && seekType != MAP_TYPE) {
             DataObjectLogging.logger.processingTypeAs("Java Iterable or Stream", "Array");
-            SchemaImpl.setType(schema, Schema.SchemaType.ARRAY);
+            SmallRyeSchema.setType(schema, Schema.SchemaType.ARRAY);
             ParameterizedType ancestorType = TypeResolver.resolveParameterizedAncestor(context, pType, seekType)
                     .orElse(pType);
 
@@ -228,7 +224,7 @@ public class TypeProcessor {
             typeRead = ARRAY_TYPE_OBJECT; // Representing collection as JSON array
         } else if (seekType == MAP_TYPE) {
             DataObjectLogging.logger.processingTypeAs("Map", "object");
-            SchemaImpl.setType(schema, Schema.SchemaType.OBJECT);
+            SmallRyeSchema.setType(schema, Schema.SchemaType.OBJECT);
             ParameterizedType ancestorType = TypeResolver.resolveParameterizedAncestor(context, pType, seekType)
                     .orElse(pType);
 
@@ -266,13 +262,13 @@ public class TypeProcessor {
     }
 
     private static Schema wrapOptionalItemSchema(Schema itemSchema) {
-        return new SchemaImpl()
-                .addAnyOf(new SchemaImpl().type(singletonList(Schema.SchemaType.NULL)))
+        return SmallRyeSchema.newInstance()
+                .addAnyOf(SmallRyeSchema.newInstance().type(singletonList(Schema.SchemaType.NULL)))
                 .addAnyOf(itemSchema);
     }
 
     private Schema readGenericValueType(Type valueType) {
-        Schema valueSchema = new SchemaImpl();
+        Schema valueSchema = SmallRyeSchema.newInstance();
 
         if (isTerminalType(valueType)) {
             TypeUtil.applyTypeAttributes(valueType, valueSchema);
@@ -291,7 +287,7 @@ public class TypeProcessor {
                 valueType.kind() == Type.Kind.WILDCARD_TYPE) {
             Type resolved = resolveTypeVariable(propsSchema, valueType, true);
             if (index.containsClass(resolved)) {
-                SchemaImpl.setType(propsSchema, Schema.SchemaType.OBJECT);
+                SmallRyeSchema.setType(propsSchema, Schema.SchemaType.OBJECT);
                 propsSchema = context.getSchemaRegistry().registerReference(valueType, context.getJsonViews(), typeResolver,
                         propsSchema);
             }
@@ -300,7 +296,7 @@ public class TypeProcessor {
                 DataObjectLogging.logger.processingEnum(type);
                 propsSchema = SchemaFactory.enumToSchema(context, valueType);
             } else {
-                SchemaImpl.setType(propsSchema, Schema.SchemaType.OBJECT);
+                SmallRyeSchema.setType(propsSchema, Schema.SchemaType.OBJECT);
             }
 
             SchemaRegistry registry = context.getSchemaRegistry();

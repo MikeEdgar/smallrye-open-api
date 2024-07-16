@@ -43,6 +43,12 @@ public final class VersionUtil {
         return (suffix > -1 ? MP_VERSION.substring(0, suffix) : MP_VERSION).split("\\.");
     });
 
+    public static final boolean VER4 = VersionUtil.compareMicroProfileVersion("4.0.0") >= 0;
+
+    public static String microprofileVersion() {
+        return MP_VERSION;
+    }
+
     public static int compareMicroProfileVersion(String checkVersion) {
         String[] checkComponents = checkVersion.split("\\.");
         int max = Math.max(MP_VERSION_COMPONENTS.length, checkComponents.length);

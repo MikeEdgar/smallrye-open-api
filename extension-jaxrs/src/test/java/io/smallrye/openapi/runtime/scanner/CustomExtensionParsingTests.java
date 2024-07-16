@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
 import io.smallrye.openapi.api.OpenApiConfig;
-import io.smallrye.openapi.api.models.media.SchemaImpl;
+import io.smallrye.openapi.api.models.media.SmallRyeSchema;
 
 /**
  * Special tests using a custom {@link AnnotationScannerExtension#parseExtension(String, String)}
@@ -80,7 +80,7 @@ class CustomExtensionParsingTests {
 
                     @Override
                     public Schema parseSchema(String jsonSchema) {
-                        return new SchemaImpl();
+                        return SmallRyeSchema.newInstance();
                     }
                 }));
 

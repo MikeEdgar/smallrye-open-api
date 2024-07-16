@@ -19,7 +19,7 @@ import org.jboss.jandex.Type;
 
 import io.smallrye.openapi.api.constants.JacksonConstants;
 import io.smallrye.openapi.api.constants.KotlinConstants;
-import io.smallrye.openapi.api.models.media.SchemaImpl;
+import io.smallrye.openapi.api.models.media.SmallRyeSchema;
 import io.smallrye.openapi.runtime.scanner.spi.AnnotationScannerContext;
 import io.smallrye.openapi.runtime.util.JandexUtil;
 
@@ -449,8 +449,8 @@ public class BeanValidationScanner {
     }
 
     void nullableKotlin(AnnotationTarget target, Schema schema) {
-        if (context.annotations().hasAnnotation(target, KOTLIN_NULLABLE) && SchemaImpl.getNullable(schema) == null) {
-            SchemaImpl.setNullable(schema, Boolean.TRUE);
+        if (context.annotations().hasAnnotation(target, KOTLIN_NULLABLE) && SmallRyeSchema.getNullable(schema) == null) {
+            SmallRyeSchema.setNullable(schema, Boolean.TRUE);
         }
     }
 
