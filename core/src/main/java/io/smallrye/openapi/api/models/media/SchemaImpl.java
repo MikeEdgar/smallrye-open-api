@@ -19,8 +19,6 @@ import static io.smallrye.openapi.runtime.io.schema.SchemaConstant.PROP_ELSE;
 import static io.smallrye.openapi.runtime.io.schema.SchemaConstant.PROP_ENUM;
 import static io.smallrye.openapi.runtime.io.schema.SchemaConstant.PROP_EXAMPLE;
 import static io.smallrye.openapi.runtime.io.schema.SchemaConstant.PROP_EXAMPLES;
-import static io.smallrye.openapi.runtime.io.schema.SchemaConstant.PROP_EXCLUSIVE_MAXIMUM;
-import static io.smallrye.openapi.runtime.io.schema.SchemaConstant.PROP_EXCLUSIVE_MINIMUM;
 import static io.smallrye.openapi.runtime.io.schema.SchemaConstant.PROP_EXTERNAL_DOCS;
 import static io.smallrye.openapi.runtime.io.schema.SchemaConstant.PROP_FORMAT;
 import static io.smallrye.openapi.runtime.io.schema.SchemaConstant.PROP_IF;
@@ -75,7 +73,7 @@ import io.smallrye.openapi.runtime.io.schema.SchemaConstant;
 /**
  * An implementation of the {@link Schema} OpenAPI model interface.
  */
-class SchemaImpl extends MapBasedModelImpl implements SmallRyeSchema, ModelImpl {
+abstract class SchemaImpl extends MapBasedModelImpl implements SmallRyeSchema, ModelImpl {
 
     private static final Set<String> NON_MERGABLE_PROPERTIES = Collections.singleton(SchemaConstant.PROP_EXAMPLES);
 
@@ -272,22 +270,6 @@ class SchemaImpl extends MapBasedModelImpl implements SmallRyeSchema, ModelImpl 
     }
 
     /**
-     * @see org.eclipse.microprofile.openapi.models.media.Schema#getExclusiveMaximum()
-     */
-    @Override
-    public BigDecimal getExclusiveMaximum() {
-        return getProperty(PROP_EXCLUSIVE_MAXIMUM, BigDecimal.class);
-    }
-
-    /**
-     * @see org.eclipse.microprofile.openapi.models.media.Schema#setExclusiveMaximum(java.math.BigDecimal)
-     */
-    @Override
-    public void setExclusiveMaximum(BigDecimal exclusiveMaximum) {
-        setProperty(PROP_EXCLUSIVE_MAXIMUM, exclusiveMaximum);
-    }
-
-    /**
      * @see org.eclipse.microprofile.openapi.models.media.Schema#getMinimum()
      */
     @Override
@@ -301,22 +283,6 @@ class SchemaImpl extends MapBasedModelImpl implements SmallRyeSchema, ModelImpl 
     @Override
     public void setMinimum(BigDecimal minimum) {
         setProperty(PROP_MINIMUM, minimum);
-    }
-
-    /**
-     * @see org.eclipse.microprofile.openapi.models.media.Schema#getExclusiveMinimum()
-     */
-    @Override
-    public BigDecimal getExclusiveMinimum() {
-        return getProperty(PROP_EXCLUSIVE_MINIMUM, BigDecimal.class);
-    }
-
-    /**
-     * @see org.eclipse.microprofile.openapi.models.media.Schema#setExclusiveMinimum(java.math.BigDecimal)
-     */
-    @Override
-    public void setExclusiveMinimum(BigDecimal exclusiveMinimum) {
-        setProperty(PROP_EXCLUSIVE_MINIMUM, exclusiveMinimum);
     }
 
     /**
@@ -480,34 +446,6 @@ class SchemaImpl extends MapBasedModelImpl implements SmallRyeSchema, ModelImpl 
         removeFromListProperty(PROP_REQUIRED, required);
     }
 
-    /**
-     * @see org.eclipse.microprofile.openapi.models.media.Schema#getType()
-     */
-    @Override
-    public List<SchemaType> getType() {
-        List<SchemaType> resultList = getListProperty(PROP_TYPE);
-        if (resultList != null) {
-            return resultList;
-        }
-
-        SchemaType result = getProperty(PROP_TYPE, SchemaType.class);
-        if (result != null) {
-            return Collections.singletonList(result);
-        }
-
-        return null;
-    }
-
-    @Override
-    public void setType(List<SchemaType> types) {
-        nullable = null;
-        setListProperty(PROP_TYPE, types);
-
-        if (typeObservers != null) {
-            typeObservers.forEach(o -> SmallRyeSchema.setTypeRetainingNull(o, types));
-        }
-    }
-
     @Override
     public SmallRyeSchema type(SchemaType type) {
         SmallRyeSchema.setType(this, type);
@@ -600,18 +538,6 @@ class SchemaImpl extends MapBasedModelImpl implements SmallRyeSchema, ModelImpl 
     @Override
     public void setAdditionalPropertiesSchema(Schema additionalProperties) {
         setProperty(PROP_ADDITIONAL_PROPERTIES, additionalProperties);
-    }
-
-    /**
-     * @see org.eclipse.microprofile.openapi.models.media.Schema#setAdditionalPropertiesBoolean(java.lang.Boolean)
-     */
-    @Override
-    public void setAdditionalPropertiesBoolean(Boolean additionalProperties) {
-        if (additionalProperties != null) {
-            setAdditionalPropertiesSchema(new SchemaImpl().booleanSchema(additionalProperties));
-        } else {
-            setAdditionalPropertiesSchema(null);
-        }
     }
 
     /**

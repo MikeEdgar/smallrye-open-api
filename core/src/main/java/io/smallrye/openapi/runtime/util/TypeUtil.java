@@ -39,6 +39,7 @@ import io.smallrye.openapi.api.constants.KotlinConstants;
 import io.smallrye.openapi.api.constants.MutinyConstants;
 import io.smallrye.openapi.api.models.ExternalDocumentationImpl;
 import io.smallrye.openapi.api.models.media.SmallRyeSchema;
+import io.smallrye.openapi.api.util.VersionUtil;
 import io.smallrye.openapi.runtime.io.schema.SchemaConstant;
 import io.smallrye.openapi.runtime.scanner.spi.AnnotationScannerContext;
 
@@ -419,7 +420,11 @@ public class TypeUtil {
         SmallRyeSchema.setType(schema, (SchemaType) properties.get(SchemaConstant.PROP_TYPE));
         schema.setFormat((String) properties.get(SchemaConstant.PROP_FORMAT));
         schema.setPattern((String) properties.get(SchemaConstant.PROP_PATTERN));
-        schema.setExamples(wrapInList(properties.get(SchemaConstant.PROP_EXAMPLE)));
+        if (VersionUtil.VER4) {
+            schema.setExamples(wrapInList(properties.get(SchemaConstant.PROP_EXAMPLE)));
+        } else {
+            schema.setExample(properties.get(SchemaConstant.PROP_EXAMPLE));
+        }
         schema.setExternalDocs((ExternalDocumentation) properties.get(SchemaConstant.PROP_EXTERNAL_DOCS));
     }
 
@@ -442,7 +447,9 @@ public class TypeUtil {
     public static void clearMatchingDefaultAttributes(Schema fieldSchema, Schema typeSchema) {
         clearIfEqual(fieldSchema.getFormat(), typeSchema.getFormat(), fieldSchema::setFormat);
         clearIfEqual(fieldSchema.getPattern(), typeSchema.getPattern(), fieldSchema::setPattern);
-        clearIfEqual(fieldSchema.getExamples(), typeSchema.getExamples(), fieldSchema::setExamples);
+        if (VersionUtil.VER4) {
+            clearIfEqual(fieldSchema.getExamples(), typeSchema.getExamples(), fieldSchema::setExamples);
+        }
         clearIfEqual(fieldSchema.getExample(), typeSchema.getExample(), fieldSchema::setExample);
         clearIfEqual(fieldSchema.getExternalDocs(), typeSchema.getExternalDocs(), fieldSchema::setExternalDocs);
     }

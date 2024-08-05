@@ -471,11 +471,10 @@ public interface AnnotationScanner {
                 }
 
                 if (schema != null && SmallRyeSchema.getNullable(schema) == null && TypeUtil.isOptional(returnType)) {
-                    if (schema.getType() != null) {
-                        schema.addType(Schema.SchemaType.NULL);
-                    }
+                    SmallRyeSchema.setNullable(schema, Boolean.TRUE);
+
                     if (schema.getRef() != null) {
-                        Schema nullSchema = SmallRyeSchema.newInstance().type(Schema.SchemaType.NULL);
+                        Schema nullSchema = SmallRyeSchema.newInstance().nullable(true);
                         // Move reference to type into its own subschema
                         Schema refSchema = SmallRyeSchema.newInstance().ref(schema.getRef());
                         schema.setRef(null);
@@ -832,8 +831,7 @@ public interface AnnotationScanner {
                     Schema schema = null;
 
                     if (isMultipartInput(requestBodyType)) {
-                        schema = SmallRyeSchema.newInstance();
-                        schema.addType(Schema.SchemaType.OBJECT);
+                        schema = SmallRyeSchema.newInstance().type(Schema.SchemaType.OBJECT);
                     } else {
                         AnnotationInstance schemaAnnotation = context.annotations().getMethodParameterAnnotation(method,
                                 requestBodyType,

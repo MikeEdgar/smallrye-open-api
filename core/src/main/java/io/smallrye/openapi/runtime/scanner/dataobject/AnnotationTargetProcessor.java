@@ -4,7 +4,6 @@ import static io.smallrye.openapi.api.constants.JaxbConstants.PROP_NAME;
 import static io.smallrye.openapi.api.constants.JaxbConstants.XML_ATTRIBUTE;
 import static io.smallrye.openapi.api.constants.JaxbConstants.XML_ELEMENT;
 import static io.smallrye.openapi.api.constants.JaxbConstants.XML_WRAPPERELEMENT;
-import static java.util.Collections.singletonList;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -25,6 +24,7 @@ import org.jboss.jandex.Type;
 import io.smallrye.openapi.api.models.media.SmallRyeSchema;
 import io.smallrye.openapi.api.models.media.XMLImpl;
 import io.smallrye.openapi.api.util.MergeUtil;
+import io.smallrye.openapi.api.util.VersionUtil;
 import io.smallrye.openapi.runtime.io.schema.SchemaConstant;
 import io.smallrye.openapi.runtime.io.schema.SchemaFactory;
 import io.smallrye.openapi.runtime.scanner.SchemaRegistry;
@@ -180,7 +180,7 @@ public class AnnotationTargetProcessor implements RequirementHandler {
             fieldSchema = readSchemaAnnotatedField(propertyKey, schemaAnnotation, fieldType);
         } else if (registrationCandidate) {
             // The type schema was registered, start with empty schema for the field using the type from the field type's schema
-            fieldSchema = SmallRyeSchema.newInstance().type(typeSchema.getType());
+            fieldSchema = SmallRyeSchema.newInstance().types(SmallRyeSchema.getTypes(typeSchema));
         } else {
             // Use the type's schema for the field as a starting point (poor man's clone)
             fieldSchema = MergeUtil.mergeObjects(SmallRyeSchema.newInstance(), typeSchema);
@@ -253,7 +253,7 @@ public class AnnotationTargetProcessor implements RequirementHandler {
 
                 // If the field should allow null but the type schema doesn't, use anyOf to allow null
                 if (fieldSchemaNullable && !isNullable(typeSchema)) {
-                    Schema nullSchema = SmallRyeSchema.newInstance().type(singletonList(Schema.SchemaType.NULL));
+                    Schema nullSchema = SmallRyeSchema.newInstance().nullable(true);
                     // Move reference to type into its own subschema
                     Schema refSchema = SmallRyeSchema.newInstance().ref(fieldSchema.getRef());
                     fieldSchema.setRef(null);
@@ -282,8 +282,7 @@ public class AnnotationTargetProcessor implements RequirementHandler {
     }
 
     private boolean isNullable(Schema schema) {
-        List<Schema.SchemaType> types = schema.getType();
-        return types != null && types.contains(Schema.SchemaType.NULL);
+        return Boolean.TRUE.equals(SmallRyeSchema.getNullable(schema));
     }
 
     private void processFieldAnnotations(Schema fieldSchema, TypeResolver typeResolver) {
@@ -421,8 +420,8 @@ public class AnnotationTargetProcessor implements RequirementHandler {
             Schema::getAnyOf,
             Schema::getDiscriminator,
             Schema::getEnumeration,
-            Schema::getExclusiveMaximum,
-            Schema::getExclusiveMinimum,
+            s -> s.getExclusiveMaximum(),
+            s -> s.getExclusiveMinimum(),
             Schema::getFormat,
             Schema::getItems,
             Schema::getMaximum,
@@ -451,7 +450,7 @@ public class AnnotationTargetProcessor implements RequirementHandler {
             Schema::getDeprecated,
             Schema::getDescription,
             Schema::getExample,
-            Schema::getExamples,
+            s -> VersionUtil.VER4 ? s.getExamples() : null,
             Schema::getExtensions,
             Schema::getExternalDocs,
             Schema::getReadOnly,

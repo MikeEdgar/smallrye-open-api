@@ -7,7 +7,6 @@ import org.jboss.jandex.AnnotationInstance;
 
 import io.smallrye.openapi.api.models.links.LinkImpl;
 import io.smallrye.openapi.runtime.io.IOContext;
-import io.smallrye.openapi.runtime.io.IOContext.OpenApiVersion;
 import io.smallrye.openapi.runtime.io.IoLogging;
 import io.smallrye.openapi.runtime.io.MapModelIO;
 import io.smallrye.openapi.runtime.io.Names;
@@ -52,7 +51,9 @@ public class LinkIO<V, A extends V, O extends V, AB, OB> extends MapModelIO<Link
         link.setOperationId(jsonIO().getString(node, PROP_OPERATION_ID));
         link.setParameters(linkParameterIO().readMap(jsonIO().getValue(node, PROP_PARAMETERS)));
         link.setRequestBody(jsonIO().fromJson(jsonIO().getValue(node, PROP_REQUEST_BODY)));
-        link.setDescription(jsonIO().getString(node, PROP_DESCRIPTION));
+        if (supportMicroProfileOpenApi4()) {
+            link.setDescription(jsonIO().getString(node, PROP_DESCRIPTION));
+        }
         link.setServer(serverIO().readValue(jsonIO().getValue(node, PROP_SERVER)));
         extensionIO().readMap(node).forEach(link::addExtension);
         return link;
@@ -62,7 +63,7 @@ public class LinkIO<V, A extends V, O extends V, AB, OB> extends MapModelIO<Link
         return optionalJsonObject(model).map(node -> {
             if (isReference(model)) {
                 setReference(node, model);
-                if (openApiVersion() == OpenApiVersion.V3_1) {
+                if (supportMicroProfileOpenApi4()) {
                     setIfPresent(node, PROP_DESCRIPTION, jsonIO().toJson(model.getDescription()));
                 }
             } else {

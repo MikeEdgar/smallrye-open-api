@@ -38,7 +38,9 @@ public class OpenAPIDefinitionIO<V, A extends V, O extends V, AB, OB> extends Mo
         openApi.setSecurity(
                 securityIO().readRequirements(annotation.value(PROP_SECURITY), annotation.value(PROP_SECURITY_SETS)));
         openApi.setExternalDocs(extDocIO().read(annotation.value(PROP_EXTERNAL_DOCS)));
-        openApi.setWebhooks(pathItemIO().readMap(annotation.value(PROP_WEBHOOKS)));
+        if (supportMicroProfileOpenApi4()) {
+            openApi.setWebhooks(pathItemIO().readMap(annotation.value(PROP_WEBHOOKS)));
+        }
         openApi.setComponents(componentsIO().read(annotation.value(PROP_COMPONENTS)));
         openApi.setExtensions(extensionIO().readExtensible(annotation));
 
@@ -67,7 +69,7 @@ public class OpenAPIDefinitionIO<V, A extends V, O extends V, AB, OB> extends Mo
         openApi.setExternalDocs(extDocIO().readValue(jsonIO().getValue(node, PROP_EXTERNAL_DOCS)));
         openApi.setComponents(componentsIO().readValue(jsonIO().getValue(node, PROP_COMPONENTS)));
         openApi.setPaths(pathsIO().readValue(jsonIO().getValue(node, PROP_PATHS)));
-        if (openApiVersion() == OpenApiVersion.V3_1) {
+        if (supportMicroProfileOpenApi4()) {
             openApi.setWebhooks(pathItemIO().readMap(jsonIO().getValue(node, PROP_WEBHOOKS)));
         }
         openApi.setExtensions(extensionIO().readMap(node));
@@ -87,7 +89,7 @@ public class OpenAPIDefinitionIO<V, A extends V, O extends V, AB, OB> extends Mo
             setIfPresent(node, PROP_SECURITY, securityIO().write(model.getSecurity()));
             setIfPresent(node, PROP_TAGS, tagIO().write(model.getTags()));
             setIfPresent(node, PROP_PATHS, pathsIO().write(model.getPaths()));
-            if (openApiVersion() == OpenApiVersion.V3_1) {
+            if (supportMicroProfileOpenApi4()) {
                 setIfPresent(node, PROP_WEBHOOKS, pathItemIO().write(model.getWebhooks()));
             }
             setIfPresent(node, PROP_COMPONENTS, componentsIO().write(model.getComponents()));

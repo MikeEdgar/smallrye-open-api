@@ -8,7 +8,6 @@ import static io.smallrye.openapi.runtime.scanner.OpenApiDataObjectScanner.SET_T
 import static io.smallrye.openapi.runtime.scanner.OpenApiDataObjectScanner.STREAM_TYPE;
 import static io.smallrye.openapi.runtime.scanner.OpenApiDataObjectScanner.STRING_TYPE;
 import static io.smallrye.openapi.runtime.util.TypeUtil.isTerminalType;
-import static java.util.Collections.singletonList;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -263,7 +262,7 @@ public class TypeProcessor {
 
     private static Schema wrapOptionalItemSchema(Schema itemSchema) {
         return SmallRyeSchema.newInstance()
-                .addAnyOf(SmallRyeSchema.newInstance().type(singletonList(Schema.SchemaType.NULL)))
+                .addAnyOf(SmallRyeSchema.newInstance().nullable(true))
                 .addAnyOf(itemSchema);
     }
 

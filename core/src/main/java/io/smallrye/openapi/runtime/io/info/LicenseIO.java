@@ -7,7 +7,6 @@ import org.jboss.jandex.AnnotationInstance;
 
 import io.smallrye.openapi.api.models.info.LicenseImpl;
 import io.smallrye.openapi.runtime.io.IOContext;
-import io.smallrye.openapi.runtime.io.IOContext.OpenApiVersion;
 import io.smallrye.openapi.runtime.io.IoLogging;
 import io.smallrye.openapi.runtime.io.ModelIO;
 import io.smallrye.openapi.runtime.io.Names;
@@ -28,7 +27,9 @@ public class LicenseIO<V, A extends V, O extends V, AB, OB> extends ModelIO<Lice
         License license = new LicenseImpl();
         license.setName(value(annotation, PROP_NAME));
         license.setUrl(value(annotation, PROP_URL));
-        license.setIdentifier(value(annotation, PROP_IDENTIFIER));
+        if (supportMicroProfileOpenApi4()) {
+            license.setIdentifier(value(annotation, PROP_IDENTIFIER));
+        }
         license.setExtensions(extensionIO().readExtensible(annotation));
         return license;
     }
@@ -39,7 +40,7 @@ public class LicenseIO<V, A extends V, O extends V, AB, OB> extends ModelIO<Lice
         License license = new LicenseImpl();
         license.setName(jsonIO().getString(node, PROP_NAME));
         license.setUrl(jsonIO().getString(node, PROP_URL));
-        if (openApiVersion() == OpenApiVersion.V3_1) {
+        if (supportMicroProfileOpenApi4()) {
             license.setIdentifier(jsonIO().getString(node, PROP_IDENTIFIER));
         }
         license.setExtensions(extensionIO().readMap(node));
@@ -50,7 +51,7 @@ public class LicenseIO<V, A extends V, O extends V, AB, OB> extends ModelIO<Lice
         return optionalJsonObject(model).map(node -> {
             setIfPresent(node, PROP_NAME, jsonIO().toJson(model.getName()));
             setIfPresent(node, PROP_URL, jsonIO().toJson(model.getUrl()));
-            if (openApiVersion() == OpenApiVersion.V3_1) {
+            if (supportMicroProfileOpenApi4()) {
                 setIfPresent(node, PROP_IDENTIFIER, jsonIO().toJson(model.getIdentifier()));
             }
             setAllIfPresent(node, extensionIO().write(model));

@@ -6,7 +6,6 @@ import org.eclipse.microprofile.openapi.models.Components;
 import org.jboss.jandex.AnnotationInstance;
 
 import io.smallrye.openapi.api.models.ComponentsImpl;
-import io.smallrye.openapi.runtime.io.IOContext.OpenApiVersion;
 import io.smallrye.openapi.runtime.io.callbacks.CallbackIO;
 import io.smallrye.openapi.runtime.io.security.SecuritySchemeIO;
 
@@ -44,7 +43,9 @@ public class ComponentsIO<V, A extends V, O extends V, AB, OB> extends ModelIO<C
         components.setHeaders(headerIO().readMap(annotation.value(PROP_HEADERS)));
         components.setLinks(linkIO().readMap(annotation.value(PROP_LINKS)));
         components.setParameters(parameterIO().readMap(annotation.value(PROP_PARAMETERS)));
-        components.setPathItems(pathItemIO().readMap(annotation.value(PROP_PATH_ITEMS)));
+        if (supportMicroProfileOpenApi4()) {
+            components.setPathItems(pathItemIO().readMap(annotation.value(PROP_PATH_ITEMS)));
+        }
         components.setRequestBodies(requestBodyIO().readMap(annotation.value(PROP_REQUEST_BODIES)));
         components.setResponses(apiResponseIO().readMap(annotation.value(PROP_RESPONSES)));
         components.setSchemas(schemaIO().readMap(annotation.value(PROP_SCHEMAS)));
@@ -67,7 +68,7 @@ public class ComponentsIO<V, A extends V, O extends V, AB, OB> extends ModelIO<C
         components.setResponses(apiResponseIO().readMap(jsonIO().getValue(node, PROP_RESPONSES)));
         components.setSchemas(schemaIO().readMap(jsonIO().getValue(node, PROP_SCHEMAS)));
         components.setSecuritySchemes(securitySchemeIO().readMap(jsonIO().getValue(node, PROP_SECURITY_SCHEMES)));
-        if (openApiVersion() == OpenApiVersion.V3_1) {
+        if (supportMicroProfileOpenApi4()) {
             components.setPathItems(pathItemIO().readMap(jsonIO().getValue(node, PROP_PATH_ITEMS)));
         }
         components.setExtensions(extensionIO().readMap(node));
@@ -85,7 +86,7 @@ public class ComponentsIO<V, A extends V, O extends V, AB, OB> extends ModelIO<C
             setIfPresent(node, PROP_SECURITY_SCHEMES, securitySchemeIO().write(model.getSecuritySchemes()));
             setIfPresent(node, PROP_LINKS, linkIO().write(model.getLinks()));
             setIfPresent(node, PROP_CALLBACKS, callbackIO().write(model.getCallbacks()));
-            if (openApiVersion() == OpenApiVersion.V3_1) {
+            if (supportMicroProfileOpenApi4()) {
                 setIfPresent(node, PROP_PATH_ITEMS, pathItemIO().write(model.getPathItems()));
             }
             setAllIfPresent(node, extensionIO().write(model));

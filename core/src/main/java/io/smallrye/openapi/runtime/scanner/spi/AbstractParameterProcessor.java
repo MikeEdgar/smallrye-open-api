@@ -400,8 +400,7 @@ public abstract class AbstractParameterProcessor {
         return Parameter.In.PATH.equals(param.getIn())
                 && !Style.MATRIX.equals(param.getStyle())
                 && param.getSchema() != null
-                && param.getSchema().getType() != null
-                && param.getSchema().getType().contains(SchemaType.STRING)
+                && SmallRyeSchema.hasType(param.getSchema(), SchemaType.STRING)
                 && param.getSchema().getPattern() == null;
     }
 
@@ -463,8 +462,7 @@ public abstract class AbstractParameterProcessor {
 
             if (schemas.isEmpty()) {
                 // ParameterContext was generated above or no @Schema was provided on the @Parameter style=matrix
-                Schema schema = SmallRyeSchema.newInstance();
-                schema.addType(SchemaType.OBJECT);
+                Schema schema = SmallRyeSchema.newInstance().type(SchemaType.OBJECT);
                 ModelUtil.setParameterSchema(context.oaiParam, schema);
                 schemas = Arrays.asList(schema);
             }
@@ -624,7 +622,7 @@ public abstract class AbstractParameterProcessor {
             Schema refSchema = ModelUtil.getComponent(scannerContext.getOpenApi(), ref);
 
             if (refSchema != null) {
-                localSchema = SmallRyeSchema.newInstance().type(refSchema.getType());
+                localSchema = SmallRyeSchema.newInstance().types(SmallRyeSchema.getTypes(refSchema));
             } else {
                 localSchema = SmallRyeSchema.newInstance().type(SchemaType
                         .valueOf(TypeUtil.getTypeAttributes(paramType).get(SchemaConstant.PROP_TYPE).toString().toUpperCase()));
@@ -649,7 +647,7 @@ public abstract class AbstractParameterProcessor {
         if (localOnlySchemaModified(paramSchema, localSchema, modCount)) {
             // Add new `allOf` schema, erasing `type` derived above from the local schema
             Schema allOf = SmallRyeSchema.newInstance().addAllOf(paramSchema)
-                    .addAllOf(localSchema.type((List<SchemaType>) null));
+                    .addAllOf(localSchema.type(null));
             param.setSchema(allOf);
         }
     }
@@ -754,9 +752,8 @@ public abstract class AbstractParameterProcessor {
         Arrays.stream(getFormMediaTypes(scannerContext::getCurrentConsumes, this::getFormMediaType))
                 .forEach(mediaTypeName -> {
                     MediaType mediaType = new MediaTypeImpl();
-                    Schema schema = SmallRyeSchema.newInstance();
+                    Schema schema = SmallRyeSchema.newInstance().type(SchemaType.OBJECT);
                     Map<String, Encoding> encodings = new HashMap<>();
-                    schema.addType(SchemaType.OBJECT);
                     mediaType.setSchema(schema);
 
                     if (APPLICATION_FORM_URLENCODED.equals(mediaTypeName)) {

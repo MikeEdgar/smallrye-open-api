@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
+import io.smallrye.openapi.api.models.media.SmallRyeSchema;
 import io.smallrye.openapi.runtime.scanner.spi.AnnotationScannerContext;
 
 class OpenApiDataObjectScannerTest {
@@ -42,7 +43,7 @@ class OpenApiDataObjectScannerTest {
         AnnotationScannerContext context = new AnnotationScannerContext(index, Thread.currentThread().getContextClassLoader(),
                 IndexScannerTestBase.emptyConfig());
         Schema out = OpenApiDataObjectScanner.process(context, Type.create(DotName.createSimple(type), Kind.CLASS));
-        assertEquals(singletonList(Schema.SchemaType.ARRAY), out.getType());
+        assertEquals(singletonList(Schema.SchemaType.ARRAY), SmallRyeSchema.getTypes(out));
         List<Schema.SchemaType> expectedTypes = itemType == null ? null : singletonList(itemType);
         assertEquals(expectedTypes, out.getItems().getType());
         assertEquals(itemFormat, out.getItems().getFormat());

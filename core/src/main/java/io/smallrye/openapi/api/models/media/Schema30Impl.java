@@ -1,5 +1,6 @@
 package io.smallrye.openapi.api.models.media;
 
+import static io.smallrye.openapi.runtime.io.schema.SchemaConstant.PROP_ADDITIONAL_PROPERTIES;
 import static io.smallrye.openapi.runtime.io.schema.SchemaConstant.PROP_EXCLUSIVE_MAXIMUM;
 import static io.smallrye.openapi.runtime.io.schema.SchemaConstant.PROP_EXCLUSIVE_MINIMUM;
 import static io.smallrye.openapi.runtime.io.schema.SchemaConstant.PROP_TYPE;
@@ -9,6 +10,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.microprofile.openapi.models.media.Schema;
@@ -61,6 +63,16 @@ class Schema30Impl extends SchemaImpl implements InvocationHandler {
     }
 
     @Override
+    public Boolean getAdditionalPropertiesBoolean() {
+        return getProperty(PROP_ADDITIONAL_PROPERTIES, Boolean.class);
+    }
+
+    @Override
+    public void setAdditionalPropertiesBoolean(Boolean additionalProperties) {
+        setProperty(PROP_ADDITIONAL_PROPERTIES, additionalProperties);
+    }
+
+    @Override
     public BigDecimal getExclusiveMaximum() {
         throw new UnsupportedOperationException();
     }
@@ -97,6 +109,12 @@ class Schema30Impl extends SchemaImpl implements InvocationHandler {
     }
 
     @Override
+    public List<SchemaType> getTypes() {
+        SchemaType type = getType1();
+        return type != null ? Collections.singletonList(type) : Collections.emptyList();
+    }
+
+    @Override
     public List<SchemaType> getType() {
         throw new UnsupportedOperationException();
     }
@@ -111,13 +129,19 @@ class Schema30Impl extends SchemaImpl implements InvocationHandler {
     }
 
     public void setType1(SchemaType type) {
-        setProperty(PROP_TYPE, type);
+        SmallRyeSchema.setType(this, type);
     }
 
     @Override
     public SmallRyeSchema type(SchemaType type) {
         this.setType1(type);
         return this;
+    }
+
+    @Override
+    public SmallRyeSchema types(List<SchemaType> types) {
+        setType1(types != null ? (SchemaType) types.get(0) : null);
+        return null;
     }
 
     @Override

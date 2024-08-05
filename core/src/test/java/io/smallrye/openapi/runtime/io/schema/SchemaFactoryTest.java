@@ -39,7 +39,7 @@ class SchemaFactoryTest extends IndexScannerTestBase {
         Index index = indexOf(new Class[0]);
         AnnotationScannerContext context = new AnnotationScannerContext(index, ClassLoaderUtil.getDefaultClassLoader(),
                 emptyConfig());
-        Type type = WildcardType.create(null, false);
+        Type type = WildcardType.createLowerBound((Type) null);
         Schema result = SchemaFactory.typeToSchema(context, type, null, Collections.emptyList());
         assertNull(result.getType());
     }

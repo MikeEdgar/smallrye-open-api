@@ -204,19 +204,24 @@ public class SchemaFactory {
         SmallRyeSchema.setType(schema, type);
 
         Object example = parseSchemaAttr(context, annotation, SchemaConstant.PROP_EXAMPLE, defaults, type);
-        List<Object> examples = SchemaFactory.<String[], List<Object>> readAttr(context, annotation,
-                SchemaConstant.PROP_EXAMPLES,
-                egs -> Arrays.stream(egs)
-                        .map(e -> parseValue(context, e, type))
-                        .collect(Collectors.toCollection(ArrayList::new)),
-                defaults);
-        if (examples != null) {
-            if (example != null) {
-                examples.add(example);
+
+        if (VersionUtil.VER4) {
+            List<Object> examples = SchemaFactory.<String[], List<Object>> readAttr(context, annotation,
+                    SchemaConstant.PROP_EXAMPLES,
+                    egs -> Arrays.stream(egs)
+                            .map(e -> parseValue(context, e, type))
+                            .collect(Collectors.toCollection(ArrayList::new)),
+                    defaults);
+            if (examples != null) {
+                if (example != null) {
+                    examples.add(example);
+                }
+                schema.setExamples(examples);
+            } else {
+                schema.setExamples(wrapInList(example));
             }
-            schema.setExamples(examples);
         } else {
-            schema.setExamples(wrapInList(example));
+            schema.setExample(example);
         }
 
         schema.setDefaultValue(
@@ -226,8 +231,9 @@ public class SchemaFactory {
         schema.setMinItems(readAttr(context, annotation, SchemaConstant.PROP_MIN_ITEMS, defaults));
         schema.setUniqueItems(readAttr(context, annotation, SchemaConstant.PROP_UNIQUE_ITEMS, defaults));
         schema.setExtensions(context.io().extensionIO().readExtensible(annotation));
-        schema.setComment(readAttr(context, annotation, SchemaConstant.PROP_COMMENT_FIELD, defaults));
+
         if (VersionUtil.VER4) {
+            schema.setComment(readAttr(context, annotation, SchemaConstant.PROP_COMMENT_FIELD, defaults));
             schema.setConstValue(parseSchemaAttr(context, annotation, SchemaConstant.PROP_CONST_VALUE, defaults, type));
         }
 
@@ -329,7 +335,7 @@ public class SchemaFactory {
             implSchema = readClassSchema(context, type, false);
         }
 
-        if (schema.getType() != null && schema.getType().contains(Schema.SchemaType.ARRAY) && implSchema != null) {
+        if (SmallRyeSchema.hasType(schema, SchemaType.ARRAY) && implSchema != null) {
             // If the @Schema annotation indicates an array type, then use the Schema
             // generated from the implementation Class as the "items" for the array.
             schema.setItems(implSchema);
@@ -475,14 +481,13 @@ public class SchemaFactory {
         if (type != null) {
             return type;
         }
-        List<SchemaType> types = schema.getType();
-        if (types != null) {
-            return types.stream()
-                    .filter(t -> t != SchemaType.NULL)
-                    .findFirst()
-                    .orElse(null);
-        }
-        return null;
+
+        return Optional.ofNullable(SmallRyeSchema.getTypes(schema))
+                .orElseGet(Collections::emptyList)
+                .stream()
+                .filter(t -> t != SmallRyeSchema.NULL)
+                .findFirst()
+                .orElse(null);
     }
 
     /**
@@ -658,7 +663,7 @@ public class SchemaFactory {
 
             enumSchema = readSchema(context, enumSchema, schemaAnnotation, enumKlazz, defaults);
         } else {
-            enumSchema.addType(SchemaType.STRING);
+            SmallRyeSchema.setType(enumSchema, SchemaType.STRING);
             enumSchema.setEnumeration(enumeration);
         }
 

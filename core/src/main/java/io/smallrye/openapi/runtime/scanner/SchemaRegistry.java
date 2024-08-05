@@ -5,7 +5,6 @@ import static io.smallrye.openapi.runtime.util.TypeUtil.getSchemaAnnotation;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -344,8 +343,7 @@ public class SchemaRegistry {
             return false;
         }
         if (!config.arrayReferencesEnable()) {
-            List<Schema.SchemaType> types = schema.getType();
-            return types == null || !types.contains(SchemaType.ARRAY);
+            return !SmallRyeSchema.hasType(schema, SchemaType.ARRAY);
         }
         return true;
     }

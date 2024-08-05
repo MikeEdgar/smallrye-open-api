@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.BaseStream;
@@ -254,13 +253,12 @@ public class OpenApiDataObjectScanner {
 
             if (!hasNonNullType(currentSchema)) {
                 // If not schema has yet been set, consider this an "object"
-                currentSchema.setType(Collections.singletonList(Schema.SchemaType.OBJECT));
+                SmallRyeSchema.setType(currentSchema, SchemaType.OBJECT);
             } else {
                 maybeRegisterSchema(currentType, currentSchema, entrySchema);
             }
 
-            List<Schema.SchemaType> types = currentSchema.getType();
-            if (types != null && types.contains(Schema.SchemaType.OBJECT)) {
+            if (SmallRyeSchema.hasType(currentSchema, SchemaType.OBJECT)) {
                 // Only 'object' type schemas should have properties of their own
                 ScannerLogging.logger.gettingFields(currentType, currentClass);
 
@@ -297,7 +295,7 @@ public class OpenApiDataObjectScanner {
          * - the target of the ref is the schema currently being processed and using the ref would
          * result in a self-referencing schema.
          */
-        if (ref != currentSchema && !currentSchema.getType().contains(Schema.SchemaType.OBJECT) && ref.getRef() != null) {
+        if (ref != currentSchema && !SmallRyeSchema.hasType(currentSchema, SchemaType.OBJECT) && ref.getRef() != null) {
             Schema refTarget = context.getSchemaRegistry().lookupSchema(currentType, context.getJsonViews());
 
             if (refTarget != entrySchema) {
@@ -308,9 +306,7 @@ public class OpenApiDataObjectScanner {
     }
 
     private static boolean hasNonNullType(Schema schema) {
-        List<Schema.SchemaType> types = schema.getType();
-
-        return types != null && types.stream().anyMatch(t -> t != SchemaType.NULL);
+        return SmallRyeSchema.hasType(schema, t -> t != SmallRyeSchema.NULL);
     }
 
     private void processClassAnnotations(Schema schema, ClassInfo classInfo) {

@@ -167,7 +167,7 @@ public class BeanValidationScanner {
             String propertyKey,
             RequirementHandler handler) {
 
-        List<SchemaType> schemaTypes = schema.getType();
+        List<SchemaType> schemaTypes = SmallRyeSchema.getTypes(schema);
 
         /*
          * The type be set. Attributes set in this function are not application

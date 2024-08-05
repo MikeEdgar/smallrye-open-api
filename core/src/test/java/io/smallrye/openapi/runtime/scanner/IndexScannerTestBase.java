@@ -38,6 +38,7 @@ import io.smallrye.config.SmallRyeConfigBuilder;
 import io.smallrye.openapi.api.OpenApiConfig;
 import io.smallrye.openapi.api.SmallRyeOpenAPI;
 import io.smallrye.openapi.api.models.OperationImpl;
+import io.smallrye.openapi.api.models.media.SmallRyeSchema;
 import io.smallrye.openapi.api.models.parameters.ParameterImpl;
 
 public class IndexScannerTestBase {
@@ -164,8 +165,9 @@ public class IndexScannerTestBase {
 
     private static boolean isPathMatrixObject(Parameter parameter) {
         return parameter.getIn() == Parameter.In.PATH && parameter.getStyle() == Parameter.Style.MATRIX
-                && parameter.getSchema() != null && parameter.getSchema().getType() != null
-                && parameter.getSchema().getType().equals(Collections.singletonList(Schema.SchemaType.OBJECT));
+                && parameter.getSchema() != null
+                && SmallRyeSchema.hasType(parameter.getSchema(), Schema.SchemaType.OBJECT)
+                && !SmallRyeSchema.hasType(parameter.getSchema(), t -> t != Schema.SchemaType.OBJECT);
     }
 
     public static String schemaToString(String entityName, Schema schema) {

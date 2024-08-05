@@ -8,6 +8,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import org.eclipse.microprofile.openapi.models.ExternalDocumentation;
 import org.eclipse.microprofile.openapi.models.media.Discriminator;
@@ -17,9 +19,15 @@ import org.eclipse.microprofile.openapi.models.media.XML;
 import io.smallrye.openapi.api.models.ExternalDocumentationImpl;
 import io.smallrye.openapi.api.util.MergeUtil;
 import io.smallrye.openapi.api.util.VersionUtil;
+import io.smallrye.openapi.runtime.io.schema.SchemaConstant;
 import io.smallrye.openapi.runtime.util.ModelUtil;
 
 public interface SmallRyeSchema extends Schema {
+
+    public static final SchemaType NULL = Stream.of(SchemaType.values())
+            .filter(t -> "NULL".equals(t.name()))
+            .findFirst()
+            .orElse(null);
 
     public static SmallRyeSchema newInstance() {
         return newInstance(null);
@@ -27,7 +35,7 @@ public interface SmallRyeSchema extends Schema {
 
     public static SmallRyeSchema newInstance(String name) {
         if (VersionUtil.VER4) {
-            return new SchemaImpl(name);
+            return new Schema31Impl(name);
         }
         return Schema30Impl.newInstance(name);
     }
@@ -56,8 +64,10 @@ public interface SmallRyeSchema extends Schema {
         if (getNullable(schema) == Boolean.TRUE) {
             if (type == null) {
                 s.setListProperty(PROP_TYPE, null);
+            } else if (NULL != null) {
+                s.setListProperty(PROP_TYPE, Arrays.asList(type, NULL));
             } else {
-                s.setListProperty(PROP_TYPE, Arrays.asList(type, SchemaType.NULL));
+                s.setListProperty(PROP_TYPE, Collections.singletonList(type));
             }
         } else {
             if (type == null) {
@@ -72,6 +82,32 @@ public interface SmallRyeSchema extends Schema {
         }
     }
 
+    public static List<SchemaType> getTypes(Schema schema) {
+        if (schema instanceof SmallRyeSchema) {
+            return ((SmallRyeSchema) schema).getTypes();
+        }
+
+        Object type = schema.getType();
+
+        if (type instanceof SchemaType) {
+            return Collections.singletonList((SchemaType) type);
+        }
+
+        @SuppressWarnings("unchecked")
+        List<SchemaType> types = (List<SchemaType>) type;
+        return types;
+    }
+
+    public static boolean hasType(Schema schema, SchemaType type) {
+        List<SchemaType> types = getTypes(schema);
+        return types != null && types.contains(type);
+    }
+
+    public static boolean hasType(Schema schema, Predicate<SchemaType> typePredicate) {
+        List<SchemaType> types = getTypes(schema);
+        return types != null && types.stream().anyMatch(typePredicate);
+    }
+
     /**
      * Implements the old logic of getNullable().
      * <p>
@@ -80,16 +116,16 @@ public interface SmallRyeSchema extends Schema {
      * scanning process, even though that information is now contained in one field.
      */
     public static Boolean getNullable(Schema schema) {
-        List<SchemaType> types = schema.getType();
+        List<SchemaType> types = getTypes(schema);
 
         if (!(schema instanceof SchemaImpl)) {
-            return types != null && types.contains(SchemaType.NULL);
+            return types != null && types.contains(NULL);
         }
 
         SchemaImpl s = (SchemaImpl) schema;
 
         if (types != null) {
-            boolean nullPermitted = types.contains(SchemaType.NULL);
+            boolean nullPermitted = types.contains(NULL);
             // Retain old tri-state behaviour of getNullable
             // If setNullable has not been called and null is not permitted, return null rather than false
             if (!nullPermitted && s.nullable == null) {
@@ -116,17 +152,33 @@ public interface SmallRyeSchema extends Schema {
         }
 
         SchemaImpl s = (SchemaImpl) schema;
-
         s.incrementModCount();
         s.nullable = nullable;
-        if (nullable == Boolean.TRUE) {
-            List<SchemaType> types = s.getType();
-            if (types != null && !types.contains(SchemaType.NULL)) {
-                s.addType(SchemaType.NULL);
+
+        if (NULL != null) {
+            if (nullable == Boolean.TRUE) {
+                List<SchemaType> types = getTypes(s);
+                if (types != null && !types.contains(NULL)) {
+                    s.addType(NULL);
+                }
+            } else {
+                s.removeType(NULL);
             }
-        } else {
-            s.removeType(SchemaType.NULL);
         }
+    }
+
+    public static boolean hasExclusiveMinimum(Schema schema) {
+        if (schema instanceof SmallRyeSchema) {
+            return ((SmallRyeSchema) schema).getDataMap().containsKey(SchemaConstant.PROP_EXCLUSIVE_MINIMUM);
+        }
+        return schema.getExclusiveMinimum() != null;
+    }
+
+    public static boolean hasExclusiveMaximum(Schema schema) {
+        if (schema instanceof SmallRyeSchema) {
+            return ((SmallRyeSchema) schema).getDataMap().containsKey(SchemaConstant.PROP_EXCLUSIVE_MAXIMUM);
+        }
+        return schema.getExclusiveMaximum() != null;
     }
 
     public static int getModCount(Schema schema) {
@@ -139,20 +191,20 @@ public interface SmallRyeSchema extends Schema {
             obs.typeObservers = ModelUtil.add(observer, obs.typeObservers, ArrayList<Schema>::new);
         }
 
-        setTypeRetainingNull(observer, observable.getType());
+        setTypeRetainingNull(observer, getTypes(observable));
     }
 
-    public static SchemaImpl copyOf(Schema other) {
+    public static Schema copyOf(Schema other) {
         if (other == null) {
-            return new SchemaImpl();
+            return newInstance();
         }
-        if (other instanceof SchemaImpl) {
-            SchemaImpl otherImpl = (SchemaImpl) other;
-            SchemaImpl result = new SchemaImpl();
+        if (other instanceof SmallRyeSchema) {
+            SmallRyeSchema otherImpl = (SmallRyeSchema) other;
+            SmallRyeSchema result = newInstance();
             result.getDataMap().putAll(copyOf(otherImpl.getDataMap()));
             return result;
         }
-        throw new UnsupportedOperationException("Can't copy a different impl");
+        throw new UnsupportedOperationException("Unknown implementation can not be copied: " + other.getClass().getName());
     }
 
     private static <K, V> Map<K, V> copyOf(Map<K, V> map) {
@@ -194,12 +246,12 @@ public interface SmallRyeSchema extends Schema {
 
     public static void setTypeRetainingNull(Schema target, List<SchemaType> types) {
         // Set types on the observer, but retain null if it was set on the observer
-        List<SchemaType> oldTypes = target.getType();
-        if (oldTypes != null && types != null
-                && oldTypes.contains(SchemaType.NULL)
-                && !types.contains(SchemaType.NULL)) {
+        List<SchemaType> oldTypes = getTypes(target);
+        if (NULL != null && oldTypes != null && types != null
+                && oldTypes.contains(NULL)
+                && !types.contains(NULL)) {
             types = new ArrayList<>(types);
-            types.add(SchemaType.NULL);
+            types.add(NULL);
         }
         target.setType(types);
     }
@@ -214,7 +266,14 @@ public interface SmallRyeSchema extends Schema {
 
     SmallRyeSchema type(SchemaType type);
 
-    List<SchemaType> getType();
+    SmallRyeSchema types(List<SchemaType> types);
+
+    default SmallRyeSchema nullable(Boolean nullable) {
+        setNullable(this, nullable);
+        return this;
+    }
+
+    List<SchemaType> getTypes();
 
     String getName();
 

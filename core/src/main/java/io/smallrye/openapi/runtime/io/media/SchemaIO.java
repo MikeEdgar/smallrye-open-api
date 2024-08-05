@@ -57,6 +57,7 @@ import org.jboss.jandex.AnnotationInstance;
 
 import io.smallrye.openapi.api.models.media.SmallRyeSchema;
 import io.smallrye.openapi.api.models.media.XMLImpl;
+import io.smallrye.openapi.api.util.VersionUtil;
 import io.smallrye.openapi.runtime.io.IOContext;
 import io.smallrye.openapi.runtime.io.IOContext.OpenApiVersion;
 import io.smallrye.openapi.runtime.io.IoLogging;
@@ -222,10 +223,11 @@ public class SchemaIO<V, A extends V, O extends V, AB, OB> extends MapModelIO<Sc
         }
 
         // Detect {$ref=....,nullable=true} and convert to anyOf[{$ref=...}, {type=null}]
-        if (schema.getRef() != null && schema.getType() == null && SmallRyeSchema.getNullable(schema) == Boolean.TRUE) {
+        if (schema.getRef() != null && SmallRyeSchema.getTypes(schema) == null
+                && SmallRyeSchema.getNullable(schema) == Boolean.TRUE) {
             List<Schema> newAnyOfSchemas = new ArrayList<>();
             newAnyOfSchemas.add(SmallRyeSchema.newInstance().ref(schema.getRef()));
-            newAnyOfSchemas.add(SmallRyeSchema.newInstance().addType(SchemaType.NULL));
+            newAnyOfSchemas.add(SmallRyeSchema.newInstance().type(SchemaType.NULL));
             if (schema.getAnyOf() == null || schema.getAnyOf().isEmpty()) {
                 schema.setAnyOf(newAnyOfSchemas);
             } else {
@@ -242,7 +244,7 @@ public class SchemaIO<V, A extends V, O extends V, AB, OB> extends MapModelIO<Sc
             if (enumeration.get(0) == null) {
                 schema.setType(Collections.singletonList(SchemaType.NULL));
                 schema.setEnumeration(null);
-            } else if (schema.getConstValue() == null) {
+            } else if (VersionUtil.VER4 && schema.getConstValue() == null) {
                 schema.setConstValue(enumeration.get(0));
                 schema.setEnumeration(null);
             }
@@ -342,7 +344,7 @@ public class SchemaIO<V, A extends V, O extends V, AB, OB> extends MapModelIO<Sc
             return Optional.empty();
         }
 
-        if (openApiVersion() == OpenApiVersion.V3_1) {
+        if (supportMicroProfileOpenApi4()) {
             return write31(model);
         } else {
             return write30(model);
@@ -360,7 +362,7 @@ public class SchemaIO<V, A extends V, O extends V, AB, OB> extends MapModelIO<Sc
     }
 
     @SuppressWarnings("deprecation")
-    public Optional<O> write30(Schema model) {
+    private Optional<O> write30(Schema model) {
         return optionalJsonObject(model).map(node -> {
             ReplacementFields fields = compute30ReplacementFields(model);
             if (fields.ref != null && !fields.ref.isEmpty()) {
@@ -418,7 +420,7 @@ public class SchemaIO<V, A extends V, O extends V, AB, OB> extends MapModelIO<Sc
         ReplacementFields result = new ReplacementFields();
 
         // Transform types and nullable
-        List<SchemaType> types = schema31.getType();
+        List<SchemaType> types = SmallRyeSchema.getTypes(schema31);
         if (types != null) {
             result.type = types.stream().filter(t -> t != SchemaType.NULL).findFirst().orElse(null);
             result.nullable = SmallRyeSchema.getNullable(schema31);
@@ -429,41 +431,51 @@ public class SchemaIO<V, A extends V, O extends V, AB, OB> extends MapModelIO<Sc
         if (result.type == null && result.nullable == Boolean.TRUE) {
             result.nullable = null;
             result.enumeration = Collections.singletonList(null);
-        } else if (schema31.getConstValue() != null) {
+        } else if (VersionUtil.VER4 && schema31.getConstValue() != null) {
             result.enumeration = Collections.singletonList(schema31.getConstValue());
         }
 
         // Convert numeric exclusiveMinimum to boolean
-        BigDecimal oldMinimum = schema31.getMinimum();
-        BigDecimal oldExclusiveMinimum = schema31.getExclusiveMinimum();
-        if (oldMinimum != null) {
-            result.minimum = oldMinimum;
-            if (oldExclusiveMinimum != null && oldExclusiveMinimum.compareTo(oldMinimum) >= 0) {
+        if (VersionUtil.VER4) {
+            BigDecimal oldMinimum = schema31.getMinimum();
+            BigDecimal oldExclusiveMinimum = schema31.getExclusiveMinimum();
+            if (oldMinimum != null) {
+                result.minimum = oldMinimum;
+                if (oldExclusiveMinimum != null && oldExclusiveMinimum.compareTo(oldMinimum) >= 0) {
+                    result.minimum = oldExclusiveMinimum;
+                    result.exclusiveMinimum = Boolean.TRUE;
+                }
+            } else if (oldExclusiveMinimum != null) {
                 result.minimum = oldExclusiveMinimum;
                 result.exclusiveMinimum = Boolean.TRUE;
             }
-        } else if (oldExclusiveMinimum != null) {
-            result.minimum = oldExclusiveMinimum;
-            result.exclusiveMinimum = Boolean.TRUE;
+        } else {
+            result.minimum = schema31.getMinimum();
+            result.exclusiveMinimum = SmallRyeSchema.hasExclusiveMinimum(schema31);
         }
 
         // Convert numeric exclusiveMaximum to boolean
-        BigDecimal oldMaximum = schema31.getMaximum();
-        BigDecimal oldExclusiveMaximum = schema31.getExclusiveMaximum();
-        if (oldMaximum != null) {
-            result.maximum = oldMaximum;
-            if (oldExclusiveMaximum != null && oldExclusiveMaximum.compareTo(oldMaximum) <= 0) {
+        if (VersionUtil.VER4) {
+            BigDecimal oldMaximum = schema31.getMaximum();
+            BigDecimal oldExclusiveMaximum = schema31.getExclusiveMaximum();
+            if (oldMaximum != null) {
+                result.maximum = oldMaximum;
+                if (oldExclusiveMaximum != null && oldExclusiveMaximum.compareTo(oldMaximum) <= 0) {
+                    result.maximum = oldExclusiveMaximum;
+                    result.exclusiveMaximum = Boolean.TRUE;
+                }
+            } else if (oldExclusiveMaximum != null) {
                 result.maximum = oldExclusiveMaximum;
                 result.exclusiveMaximum = Boolean.TRUE;
             }
-        } else if (oldExclusiveMaximum != null) {
-            result.maximum = oldExclusiveMaximum;
-            result.exclusiveMaximum = Boolean.TRUE;
+        } else {
+            result.maximum = schema31.getMaximum();
+            result.exclusiveMaximum = SmallRyeSchema.hasExclusiveMaximum(schema31);
         }
 
         // Transform example
         result.example = schema31.getExample();
-        if (result.example == null) {
+        if (result.example == null && VersionUtil.VER4) {
             result.example = Optional.ofNullable(schema31.getExamples())
                     .flatMap(l -> l.stream().findFirst())
                     .orElse(null);
@@ -643,7 +655,8 @@ public class SchemaIO<V, A extends V, O extends V, AB, OB> extends MapModelIO<Sc
         }
         SmallRyeSchema s = (SmallRyeSchema) schema;
         Map<String, Object> data = s.getDataMap();
-        return data.size() == 1 && s.getType() != null && s.getType().equals(Collections.singletonList(SchemaType.NULL));
+        List<SchemaType> types = SmallRyeSchema.getTypes(schema);
+        return data.size() == 1 && types != null && types.equals(Collections.singletonList(SchemaType.NULL));
     }
 
     /**
