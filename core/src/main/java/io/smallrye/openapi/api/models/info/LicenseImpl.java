@@ -2,64 +2,60 @@ package io.smallrye.openapi.api.models.info;
 
 import org.eclipse.microprofile.openapi.models.info.License;
 
-import io.smallrye.openapi.api.models.ExtensibleImpl;
+import io.smallrye.openapi.api.models.BaseExtensibleModel;
 import io.smallrye.openapi.api.models.ModelImpl;
 
 /**
  * An implementation of the {@link License} OpenAPI model interface.
  */
-public class LicenseImpl extends ExtensibleImpl<License> implements License, ModelImpl {
-
-    private String name;
-    private String url;
-    private String identifier;
+public class LicenseImpl extends BaseExtensibleModel<License> implements License, ModelImpl {
 
     /**
-     * @see org.eclipse.microprofile.openapi.models.info.License#getName()
+     * {@inheritDoc}
      */
     @Override
     public String getName() {
-        return this.name;
+        return getProperty("name");
     }
 
     /**
-     * @see org.eclipse.microprofile.openapi.models.info.License#setName(java.lang.String)
+     * {@inheritDoc}
      */
     @Override
     public void setName(String name) {
-        this.name = name;
+        setProperty("name", name);
     }
 
     /**
-     * @see org.eclipse.microprofile.openapi.models.info.License#getUrl()
+     * {@inheritDoc}
      */
     @Override
     public String getUrl() {
-        return this.url;
+        return getProperty("url");
     }
 
     /**
-     * @see org.eclipse.microprofile.openapi.models.info.License#setUrl(java.lang.String)
+     * {@inheritDoc}
      */
     @Override
     public void setUrl(String url) {
-        this.url = url;
+        setProperty("url", url);
     }
 
     /**
-     * @see org.eclipse.microprofile.openapi.models.info.License#getIdentifier()
+     * {@inheritDoc}
      */
     @Override
     public String getIdentifier() {
-        return this.identifier;
+        return getProperty("identifier");
     }
 
     /**
-     * @see org.eclipse.microprofile.openapi.models.info.License#setIdentifier(java.lang.String)
+     * {@inheritDoc}
      */
     @Override
     public void setIdentifier(String identifier) {
-        this.identifier = identifier;
+        setProperty("identifier", identifier);
     }
 
 }

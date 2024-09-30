@@ -19,7 +19,7 @@ import io.smallrye.openapi.runtime.util.ModelUtil;
 /**
  * An implementation of the {@link Components} OpenAPI model interface.
  */
-public class ComponentsImpl extends ExtensibleImpl<Components> implements Components, ModelImpl {
+public class ComponentsImpl extends BaseExtensibleModel<Components> implements Components, ModelImpl {
 
     private Map<String, Schema> schemas;
     private Map<String, APIResponse> responses;
@@ -33,28 +33,27 @@ public class ComponentsImpl extends ExtensibleImpl<Components> implements Compon
     private Map<String, PathItem> pathItems;
 
     /**
-     * @see org.eclipse.microprofile.openapi.models.Components#getSchemas()
+     * {@inheritDoc}
      */
     @Override
     public Map<String, Schema> getSchemas() {
-        return ModelUtil.unmodifiableMap(this.schemas);
+        return getMapProperty("schemas");
     }
 
     /**
-     * @see org.eclipse.microprofile.openapi.models.Components#setSchemas(java.util.Map)
+     * {@inheritDoc}
      */
     @Override
     public void setSchemas(Map<String, Schema> schemas) {
-        this.schemas = ModelUtil.replace(schemas);
+        setMapProperty("schemas", schemas);
     }
 
     /**
-     * @see org.eclipse.microprofile.openapi.models.Components#addSchema(java.lang.String,
-     *      org.eclipse.microprofile.openapi.models.media.Schema)
+     * {@inheritDoc}
      */
     @Override
     public Components addSchema(String key, Schema schema) {
-        this.schemas = ModelUtil.add(key, schema, this.schemas);
+        putMapPropertyEntry("schemas", key, schema);
         return this;
     }
 

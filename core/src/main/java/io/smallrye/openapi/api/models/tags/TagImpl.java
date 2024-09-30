@@ -1,69 +1,63 @@
 package io.smallrye.openapi.api.models.tags;
 
-import java.util.Objects;
-
 import org.eclipse.microprofile.openapi.models.ExternalDocumentation;
 import org.eclipse.microprofile.openapi.models.tags.Tag;
 
-import io.smallrye.openapi.api.models.ExtensibleImpl;
+import io.smallrye.openapi.api.models.BaseExtensibleModel;
 import io.smallrye.openapi.api.models.ModelImpl;
 import io.smallrye.openapi.api.util.VersionUtil;
 
 /**
  * An implementation of the {@link Tag} OpenAPI model interface.
  */
-public class TagImpl extends ExtensibleImpl<Tag> implements Tag, ModelImpl {
-
-    private String name;
-    private String description;
-    private ExternalDocumentation externalDocs;
+public class TagImpl extends BaseExtensibleModel<Tag> implements Tag, ModelImpl {
 
     /**
-     * @see org.eclipse.microprofile.openapi.models.tags.Tag#getName()
+     * {@inheritDoc}
      */
     @Override
     public String getName() {
-        return this.name;
+        return getProperty("name");
     }
 
     /**
-     * @see org.eclipse.microprofile.openapi.models.tags.Tag#setName(java.lang.String)
+     * {@inheritDoc}
      */
     @Override
     public void setName(String name) {
-        this.name = name;
+        setProperty("name", name);
     }
 
     /**
-     * @see org.eclipse.microprofile.openapi.models.tags.Tag#getDescription()
+     * {@inheritDoc}
      */
     @Override
     public String getDescription() {
-        return this.description;
+        return getProperty("description");
     }
 
     /**
-     * @see org.eclipse.microprofile.openapi.models.tags.Tag#setDescription(java.lang.String)
+     * {@inheritDoc}
      */
     @Override
     public void setDescription(String description) {
-        this.description = description;
+        setProperty("description", description);
     }
 
     /**
-     * @see org.eclipse.microprofile.openapi.models.tags.Tag#getExternalDocs()
+     * {@inheritDoc}
      */
     @Override
     public ExternalDocumentation getExternalDocs() {
-        return this.externalDocs;
+        return getProperty("externalDocs");
     }
 
     /**
-     * @see org.eclipse.microprofile.openapi.models.tags.Tag#setExternalDocs(org.eclipse.microprofile.openapi.models.ExternalDocumentation)
+     * {@inheritDoc}
      */
     @Override
     public void setExternalDocs(ExternalDocumentation externalDocs) {
-        this.externalDocs = externalDocs;
+        setProperty("externalDocs", externalDocs);
     }
 
     @Override
@@ -78,15 +72,16 @@ public class TagImpl extends ExtensibleImpl<Tag> implements Tag, ModelImpl {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        TagImpl tag = (TagImpl) o;
-        return Objects.equals(name, tag.name)
-                && Objects.equals(description, tag.description)
-                && Objects.equals(externalDocs, tag.externalDocs)
-                && Objects.equals(getExtensions(), tag.getExtensions());
+        return super.equals(o);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, description, externalDocs, getExtensions());
+        if (VersionUtil.compareMicroProfileVersion("3.0") < 0) {
+            // TCK versions before MP OpenAPI release 3.0 check Tag instances are not equal
+            return System.identityHashCode(this);
+        }
+
+        return super.hashCode();
     }
 }
