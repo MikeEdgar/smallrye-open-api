@@ -2,64 +2,60 @@ package io.smallrye.openapi.api.models.info;
 
 import org.eclipse.microprofile.openapi.models.info.Contact;
 
-import io.smallrye.openapi.api.models.ExtensibleImpl;
+import io.smallrye.openapi.api.models.BaseExtensibleModel;
 import io.smallrye.openapi.api.models.ModelImpl;
 
 /**
  * An implementation of the {@link Contact} OpenAPI model interface.
  */
-public class ContactImpl extends ExtensibleImpl<Contact> implements Contact, ModelImpl {
-
-    private String name;
-    private String url;
-    private String email;
+public class ContactImpl extends BaseExtensibleModel<Contact> implements Contact, ModelImpl {
 
     /**
-     * @see org.eclipse.microprofile.openapi.models.info.Contact#getName()
+     * {@inheritDoc}
      */
     @Override
     public String getName() {
-        return this.name;
+        return getProperty("name");
     }
 
     /**
-     * @see org.eclipse.microprofile.openapi.models.info.Contact#setName(java.lang.String)
+     * {@inheritDoc}
      */
     @Override
     public void setName(String name) {
-        this.name = name;
+        setProperty("name", name);
     }
 
     /**
-     * @see org.eclipse.microprofile.openapi.models.info.Contact#getUrl()
+     * {@inheritDoc}
      */
     @Override
     public String getUrl() {
-        return this.url;
+        return getProperty("url");
     }
 
     /**
-     * @see org.eclipse.microprofile.openapi.models.info.Contact#setUrl(java.lang.String)
+     * {@inheritDoc}
      */
     @Override
     public void setUrl(String url) {
-        this.url = url;
+        setProperty("url", url);
     }
 
     /**
-     * @see org.eclipse.microprofile.openapi.models.info.Contact#getEmail()
+     * {@inheritDoc}
      */
     @Override
     public String getEmail() {
-        return this.email;
+        return getProperty("email");
     }
 
     /**
-     * @see org.eclipse.microprofile.openapi.models.info.Contact#setEmail(java.lang.String)
+     * {@inheritDoc}
      */
     @Override
     public void setEmail(String email) {
-        this.email = email;
+        setProperty("email", email);
     }
 
 }
