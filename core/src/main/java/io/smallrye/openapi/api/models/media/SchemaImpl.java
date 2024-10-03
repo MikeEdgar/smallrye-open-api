@@ -64,12 +64,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.eclipse.microprofile.openapi.OASFactory;
 import org.eclipse.microprofile.openapi.models.ExternalDocumentation;
 import org.eclipse.microprofile.openapi.models.media.Discriminator;
 import org.eclipse.microprofile.openapi.models.media.Schema;
 import org.eclipse.microprofile.openapi.models.media.XML;
 
-import io.smallrye.openapi.api.models.ExternalDocumentationImpl;
 import io.smallrye.openapi.api.models.MapBasedModelImpl;
 import io.smallrye.openapi.api.models.ModelImpl;
 import io.smallrye.openapi.api.util.MergeUtil;
@@ -78,8 +78,9 @@ import io.smallrye.openapi.runtime.io.schema.SchemaConstant;
 import io.smallrye.openapi.runtime.util.ModelUtil;
 
 /**
- * An implementation of the {@link Schema} OpenAPI model interface.
+ * @deprecated use {@link org.eclipse.microprofile.openapi.OASFactory#createSchema()} instead.
  */
+@Deprecated(since = "4.0", forRemoval = true)
 public class SchemaImpl extends MapBasedModelImpl implements Schema, ModelImpl {
 
     private static final Set<String> NON_MERGABLE_PROPERTIES = Collections.singleton(SchemaConstant.PROP_EXAMPLES);
@@ -119,10 +120,6 @@ public class SchemaImpl extends MapBasedModelImpl implements Schema, ModelImpl {
         return super.mergeFrom(other);
     }
 
-    public static boolean isNamed(Schema schema) {
-        return schema instanceof SchemaImpl && ((SchemaImpl) schema).name != null;
-    }
-
     public static int getModCount(Schema schema) {
         return schema instanceof SchemaImpl ? ((SchemaImpl) schema).modCount : -1;
     }
@@ -149,12 +146,6 @@ public class SchemaImpl extends MapBasedModelImpl implements Schema, ModelImpl {
         throw new UnsupportedOperationException("Can't copy a different impl");
     }
 
-    public static void clear(Schema schema) {
-        SchemaImpl impl = (SchemaImpl) schema;
-        impl.data.clear();
-        impl.booleanValue = null;
-    }
-
     private static <K, V> Map<K, V> copyOf(Map<K, V> map) {
         Map<K, V> clone = new HashMap<>();
         for (Map.Entry<K, V> entry : map.entrySet()) {
@@ -173,6 +164,7 @@ public class SchemaImpl extends MapBasedModelImpl implements Schema, ModelImpl {
         return clone;
     }
 
+    @SuppressWarnings("unchecked")
     private static <T> T copyOf(T value) {
         if (value instanceof Map) {
             return (T) copyOf((Map<?, ?>) value);
@@ -183,7 +175,7 @@ public class SchemaImpl extends MapBasedModelImpl implements Schema, ModelImpl {
         } else if (value instanceof XML) {
             return (T) MergeUtil.mergeObjects(new XMLImpl(), (XML) value);
         } else if (value instanceof ExternalDocumentation) {
-            return (T) MergeUtil.mergeObjects(new ExternalDocumentationImpl(), (ExternalDocumentation) value);
+            return (T) MergeUtil.mergeObjects(OASFactory.createExternalDocumentation(), (ExternalDocumentation) value);
         } else if (value instanceof Discriminator) {
             return (T) MergeUtil.mergeObjects(new DiscriminatorImpl(), (Discriminator) value);
         } else {
@@ -206,10 +198,6 @@ public class SchemaImpl extends MapBasedModelImpl implements Schema, ModelImpl {
      */
     public SchemaImpl() {
         this((String) null);
-    }
-
-    public String getName() {
-        return name;
     }
 
     private void incrementModCount() {
@@ -246,6 +234,28 @@ public class SchemaImpl extends MapBasedModelImpl implements Schema, ModelImpl {
         if (s.typeObservers != null) {
             s.typeObservers.forEach(o -> SchemaImpl.setType(o, type));
         }
+    }
+
+    @Override
+    public void setType(List<SchemaType> types) {
+        nullable = null;
+        setListProperty(PROP_TYPE, types);
+
+        if (typeObservers != null) {
+            typeObservers.forEach(o -> setTypeRetainingNull(o, types));
+        }
+    }
+
+    private static void setTypeRetainingNull(Schema target, List<SchemaType> types) {
+        // Set types on the observer, but retain null if it was set on the observer
+        List<SchemaType> oldTypes = target.getType();
+        if (oldTypes != null && types != null
+                && oldTypes.contains(SchemaType.NULL)
+                && !types.contains(SchemaType.NULL)) {
+            types = new ArrayList<>(types);
+            types.add(SchemaType.NULL);
+        }
+        target.setType(types);
     }
 
     /**
@@ -662,28 +672,6 @@ public class SchemaImpl extends MapBasedModelImpl implements Schema, ModelImpl {
         }
 
         return null;
-    }
-
-    @Override
-    public void setType(List<SchemaType> types) {
-        nullable = null;
-        setListProperty(PROP_TYPE, types);
-
-        if (typeObservers != null) {
-            typeObservers.forEach(o -> setTypeRetainingNull(o, types));
-        }
-    }
-
-    private static void setTypeRetainingNull(Schema target, List<SchemaType> types) {
-        // Set types on the observer, but retain null if it was set on the observer
-        List<SchemaType> oldTypes = target.getType();
-        if (oldTypes != null && types != null
-                && oldTypes.contains(SchemaType.NULL)
-                && !types.contains(SchemaType.NULL)) {
-            types = new ArrayList<SchemaType>(types);
-            types.add(SchemaType.NULL);
-        }
-        target.setType(types);
     }
 
     @Override
@@ -1420,7 +1408,7 @@ public class SchemaImpl extends MapBasedModelImpl implements Schema, ModelImpl {
     }
 
     @Override
-    protected <T> void removeFromMapProperty(String propertyName, String key) {
+    protected void removeFromMapProperty(String propertyName, String key) {
         if (!isBooleanSchema()) {
             incrementModCount();
             super.removeFromMapProperty(propertyName, key);

@@ -1,64 +1,15 @@
 package io.smallrye.openapi.api.models.tags;
 
-import org.eclipse.microprofile.openapi.models.ExternalDocumentation;
-import org.eclipse.microprofile.openapi.models.tags.Tag;
+import org.eclipse.microprofile.openapi.OASFactory;
 
-import io.smallrye.openapi.api.models.BaseExtensibleModel;
-import io.smallrye.openapi.api.models.ModelImpl;
 import io.smallrye.openapi.api.util.VersionUtil;
+import io.smallrye.openapi.internal.models.tags.Tag;
 
 /**
- * An implementation of the {@link Tag} OpenAPI model interface.
+ * @deprecated use {@link OASFactory#createTag()} instead.
  */
-public class TagImpl extends BaseExtensibleModel<Tag> implements Tag, ModelImpl {
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String getName() {
-        return getProperty("name");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setName(String name) {
-        setProperty("name", name);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String getDescription() {
-        return getProperty("description");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setDescription(String description) {
-        setProperty("description", description);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public ExternalDocumentation getExternalDocs() {
-        return getProperty("externalDocs");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setExternalDocs(ExternalDocumentation externalDocs) {
-        setProperty("externalDocs", externalDocs);
-    }
+@Deprecated(since = "4.0", forRemoval = true)
+public class TagImpl extends Tag { // NOSONAR
 
     @Override
     public boolean equals(Object o) {

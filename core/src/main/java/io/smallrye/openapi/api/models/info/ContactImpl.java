@@ -1,61 +1,10 @@
 package io.smallrye.openapi.api.models.info;
 
-import org.eclipse.microprofile.openapi.models.info.Contact;
-
-import io.smallrye.openapi.api.models.BaseExtensibleModel;
-import io.smallrye.openapi.api.models.ModelImpl;
+import io.smallrye.openapi.internal.models.info.Contact;
 
 /**
- * An implementation of the {@link Contact} OpenAPI model interface.
+ * @deprecated use {@link org.eclipse.microprofile.openapi.OASFactory#createContact()} instead.
  */
-public class ContactImpl extends BaseExtensibleModel<Contact> implements Contact, ModelImpl {
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String getName() {
-        return getProperty("name");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setName(String name) {
-        setProperty("name", name);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String getUrl() {
-        return getProperty("url");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setUrl(String url) {
-        setProperty("url", url);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String getEmail() {
-        return getProperty("email");
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setEmail(String email) {
-        setProperty("email", email);
-    }
-
+@Deprecated(since = "4.0", forRemoval = true)
+public class ContactImpl extends Contact {
 }

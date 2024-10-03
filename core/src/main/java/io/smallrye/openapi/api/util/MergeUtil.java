@@ -21,6 +21,7 @@ import org.eclipse.microprofile.openapi.models.Constructible;
 import org.eclipse.microprofile.openapi.models.Extensible;
 import org.eclipse.microprofile.openapi.models.OpenAPI;
 import org.eclipse.microprofile.openapi.models.Reference;
+import org.eclipse.microprofile.openapi.models.media.Schema.SchemaType;
 import org.eclipse.microprofile.openapi.models.parameters.Parameter;
 import org.eclipse.microprofile.openapi.models.responses.APIResponses;
 import org.eclipse.microprofile.openapi.models.security.SecurityRequirement;
@@ -29,6 +30,7 @@ import org.eclipse.microprofile.openapi.models.tags.Tag;
 
 import io.smallrye.openapi.api.models.MapBasedModelImpl;
 import io.smallrye.openapi.api.models.ModelImpl;
+import io.smallrye.openapi.internal.models.BaseModel;
 import io.smallrye.openapi.runtime.OpenApiRuntimeException;
 
 /**
@@ -47,6 +49,8 @@ public class MergeUtil {
         EXCLUDED_PROPERTIES.add("class");
         EXCLUDED_PROPERTIES.add("openapi");
     }
+
+    private static final List<Class<?>> DISTINCT_LIST_TYPES = List.of(String.class, SchemaType.class);
 
     private MergeUtil() {
     }
@@ -101,6 +105,23 @@ public class MergeUtil {
             return object1;
         }
 
+        if (object1 instanceof BaseModel) {
+            mergeBaseModel((BaseModel<?>) object1, (BaseModel<?>) object2);
+            return object1;
+        }
+
+        if (object1 instanceof List) {
+            @SuppressWarnings("unchecked")
+            T result = (T) mergeLists((List<?>) object1, (List<?>) object2);
+            return result;
+        }
+
+        if (object1 instanceof Map) {
+            @SuppressWarnings("unchecked")
+            T result = (T) mergeMaps((Map<?, ?>) object1, (Map<?, ?>) object2);
+            return result;
+        }
+
         try {
             Arrays.stream(Introspector.getBeanInfo(object1.getClass()).getPropertyDescriptors())
                     .filter(descriptor -> !EXCLUDED_PROPERTIES.contains(descriptor.getName()))
@@ -117,6 +138,11 @@ public class MergeUtil {
         }
 
         return object1;
+    }
+
+    @SuppressWarnings("unchecked")
+    static <T extends Constructible> void mergeBaseModel(BaseModel<?> model1, BaseModel<?> model2) {
+        ((BaseModel<T>) model1).merge((BaseModel<T>) model2);
     }
 
     @SuppressWarnings({ "rawtypes" })
@@ -258,8 +284,8 @@ public class MergeUtil {
             return values2;
         }
 
-        if (values1.get(0) instanceof String) {
-            return mergeStringLists(values1, values2);
+        if (DISTINCT_LIST_TYPES.contains(values1.get(0).getClass())) {
+            return mergeListsWithUnique(values1, values2);
         }
 
         if (values1.get(0) instanceof Tag) {
@@ -291,8 +317,8 @@ public class MergeUtil {
      * @param values1
      * @param values2
      */
-    private static List<String> mergeStringLists(List<String> values1, List<String> values2) {
-        Set<String> set = new LinkedHashSet<>();
+    private static <T> List<T> mergeListsWithUnique(List<T> values1, List<T> values2) {
+        Set<T> set = new LinkedHashSet<>();
         set.addAll(values1);
         set.addAll(values2);
         return new ArrayList<>(set);

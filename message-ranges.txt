@@ -6,7 +6,9 @@
 
 00500-00999 = smallrye-open-api [io.smallrye.openapi.api] (logging)
 
-01000-01999 = smallrye-open-api [io.smallrye.openapi.api.util] (logging)
+01000-01499 = smallrye-open-api [io.smallrye.openapi.api.util] (logging)
+
+01500-01999 = smallrye-open-api [io.smallrye.openapi.internal.models] (logging)
 
 02000-02999 = smallrye-open-api [io.smallrye.openapi.runtime.io] (logging)
 
