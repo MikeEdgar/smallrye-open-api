@@ -2,12 +2,11 @@ package io.smallrye.openapi.runtime.io;
 
 import java.util.Optional;
 
+import org.eclipse.microprofile.openapi.OASFactory;
 import org.eclipse.microprofile.openapi.models.Operation;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget;
 import org.jboss.jandex.DotName;
-
-import io.smallrye.openapi.api.models.OperationImpl;
 
 public class OperationIO<V, A extends V, O extends V, AB, OB> extends ModelIO<Operation, V, A, O, AB, OB> {
 
@@ -43,7 +42,7 @@ public class OperationIO<V, A extends V, O extends V, AB, OB> extends ModelIO<Op
     @Override
     public Operation read(AnnotationInstance annotationInstance) {
         IoLogging.logger.singleAnnotation("@Operation");
-        Operation operation = new OperationImpl();
+        Operation operation = OASFactory.createOperation();
         operation.setSummary(value(annotationInstance, PROP_SUMMARY));
         operation.setDescription(value(annotationInstance, PROP_DESCRIPTION));
         operation.setOperationId(value(annotationInstance, PROP_OPERATION_ID));
@@ -55,7 +54,7 @@ public class OperationIO<V, A extends V, O extends V, AB, OB> extends ModelIO<Op
     @Override
     public Operation readObject(O node) {
         IoLogging.logger.singleJsonObject("Operation");
-        Operation model = new OperationImpl();
+        Operation model = OASFactory.createOperation();
         model.setTags(jsonIO().getArray(node, PROP_TAGS, jsonIO()::asString).orElse(null));
         model.setSummary(jsonIO().getString(node, PROP_SUMMARY));
         model.setDescription(jsonIO().getString(node, PROP_DESCRIPTION));

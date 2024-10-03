@@ -2,10 +2,10 @@ package io.smallrye.openapi.runtime.io.links;
 
 import java.util.Optional;
 
+import org.eclipse.microprofile.openapi.OASFactory;
 import org.eclipse.microprofile.openapi.models.links.Link;
 import org.jboss.jandex.AnnotationInstance;
 
-import io.smallrye.openapi.api.models.links.LinkImpl;
 import io.smallrye.openapi.runtime.io.IOContext;
 import io.smallrye.openapi.runtime.io.IOContext.OpenApiVersion;
 import io.smallrye.openapi.runtime.io.IoLogging;
@@ -31,7 +31,7 @@ public class LinkIO<V, A extends V, O extends V, AB, OB> extends MapModelIO<Link
     @Override
     public Link read(AnnotationInstance annotationInstance) {
         IoLogging.logger.singleAnnotation("@Link");
-        Link link = new LinkImpl();
+        Link link = OASFactory.createLink();
         link.setOperationRef(value(annotationInstance, PROP_OPERATION_REF));
         link.setOperationId(value(annotationInstance, PROP_OPERATION_ID));
         link.setParameters(linkParameterIO().readMap(annotationInstance.value(PROP_PARAMETERS)));
@@ -46,7 +46,7 @@ public class LinkIO<V, A extends V, O extends V, AB, OB> extends MapModelIO<Link
     @Override
     public Link readObject(O node) {
         IoLogging.logger.singleJsonNode("Link");
-        Link link = new LinkImpl();
+        Link link = OASFactory.createLink();
         link.setRef(readReference(node));
         link.setOperationRef(jsonIO().getString(node, PROP_OPERATION_REF));
         link.setOperationId(jsonIO().getString(node, PROP_OPERATION_ID));

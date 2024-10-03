@@ -11,12 +11,12 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.eclipse.microprofile.openapi.OASFactory;
 import org.eclipse.microprofile.openapi.models.tags.Tag;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget;
 import org.jboss.jandex.AnnotationValue;
 
-import io.smallrye.openapi.api.models.tags.TagImpl;
 import io.smallrye.openapi.runtime.io.IOContext;
 import io.smallrye.openapi.runtime.io.IoLogging;
 import io.smallrye.openapi.runtime.io.ModelIO;
@@ -89,7 +89,7 @@ public class TagIO<V, A extends V, O extends V, AB, OB> extends ModelIO<Tag, V, 
     public Tag read(AnnotationInstance annotation) {
         Objects.requireNonNull(annotation, "Tag annotation must not be null");
         IoLogging.logger.singleAnnotation("@Tag");
-        Tag tag = new TagImpl();
+        Tag tag = OASFactory.createTag();
         tag.setName(value(annotation, PROP_NAME));
         tag.setDescription(value(annotation, PROP_DESCRIPTION));
         tag.setExternalDocs(extDocIO().read(annotation.value(PROP_EXTERNAL_DOCS)));
@@ -117,7 +117,7 @@ public class TagIO<V, A extends V, O extends V, AB, OB> extends ModelIO<Tag, V, 
     @Override
     public Tag readObject(O node) {
         IoLogging.logger.singleJsonNode("Tag");
-        Tag tag = new TagImpl();
+        Tag tag = OASFactory.createTag();
         tag.setName(jsonIO().getString(node, PROP_NAME));
         tag.setDescription(jsonIO().getString(node, PROP_DESCRIPTION));
         tag.setExternalDocs(extDocIO().readValue(jsonIO().getValue(node, PROP_EXTERNAL_DOCS)));

@@ -2,10 +2,10 @@ package io.smallrye.openapi.runtime.io;
 
 import java.util.Optional;
 
+import org.eclipse.microprofile.openapi.OASFactory;
 import org.eclipse.microprofile.openapi.models.Paths;
 import org.jboss.jandex.AnnotationInstance;
 
-import io.smallrye.openapi.api.models.PathsImpl;
 import io.smallrye.openapi.runtime.io.extensions.ExtensionIO;
 
 public class PathsIO<V, A extends V, O extends V, AB, OB> extends ModelIO<Paths, V, A, O, AB, OB> {
@@ -22,7 +22,7 @@ public class PathsIO<V, A extends V, O extends V, AB, OB> extends ModelIO<Paths,
     @Override
     public Paths readObject(O node) {
         // LOG ...
-        Paths paths = new PathsImpl();
+        Paths paths = OASFactory.createPaths();
 
         jsonIO().properties(node)
                 .stream()

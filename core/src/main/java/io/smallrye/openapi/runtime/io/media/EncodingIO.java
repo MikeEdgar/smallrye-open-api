@@ -3,12 +3,12 @@ package io.smallrye.openapi.runtime.io.media;
 import java.util.Arrays;
 import java.util.Optional;
 
+import org.eclipse.microprofile.openapi.OASFactory;
 import org.eclipse.microprofile.openapi.models.media.Encoding;
 import org.eclipse.microprofile.openapi.models.media.Encoding.Style;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
 
-import io.smallrye.openapi.api.models.media.EncodingImpl;
 import io.smallrye.openapi.runtime.io.IOContext;
 import io.smallrye.openapi.runtime.io.IoLogging;
 import io.smallrye.openapi.runtime.io.MapModelIO;
@@ -29,7 +29,7 @@ public class EncodingIO<V, A extends V, O extends V, AB, OB> extends MapModelIO<
     @Override
     public Encoding read(AnnotationInstance annotation) {
         IoLogging.logger.singleAnnotation("@Encoding");
-        Encoding encoding = new EncodingImpl();
+        Encoding encoding = OASFactory.createEncoding();
         encoding.setContentType(value(annotation, PROP_CONTENT_TYPE));
         encoding.setStyle(readStyle(annotation));
         encoding.setExplode(value(annotation, PROP_EXPLODE));
@@ -42,7 +42,7 @@ public class EncodingIO<V, A extends V, O extends V, AB, OB> extends MapModelIO<
     @Override
     public Encoding readObject(O node) {
         IoLogging.logger.singleJsonNode("Encoding");
-        Encoding encoding = new EncodingImpl();
+        Encoding encoding = OASFactory.createEncoding();
         encoding.setContentType(jsonIO().getString(node, PROP_CONTENT_TYPE));
         encoding.setHeaders(headerIO().readMap(jsonIO().getValue(node, PROP_HEADERS)));
         encoding.setStyle(readStyle(jsonIO().getValue(node, PROP_STYLE)));

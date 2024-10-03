@@ -2,10 +2,10 @@ package io.smallrye.openapi.runtime.io.info;
 
 import java.util.Optional;
 
+import org.eclipse.microprofile.openapi.OASFactory;
 import org.eclipse.microprofile.openapi.models.info.Contact;
 import org.jboss.jandex.AnnotationInstance;
 
-import io.smallrye.openapi.api.models.info.ContactImpl;
 import io.smallrye.openapi.runtime.io.IOContext;
 import io.smallrye.openapi.runtime.io.IoLogging;
 import io.smallrye.openapi.runtime.io.ModelIO;
@@ -24,7 +24,7 @@ public class ContactIO<V, A extends V, O extends V, AB, OB> extends ModelIO<Cont
     @Override
     public Contact read(AnnotationInstance annotation) {
         IoLogging.logger.singleAnnotation("@Contact");
-        Contact contact = new ContactImpl();
+        Contact contact = OASFactory.createContact();
         contact.setName(value(annotation, PROP_NAME));
         contact.setUrl(value(annotation, PROP_URL));
         contact.setEmail(value(annotation, PROP_EMAIL));
@@ -35,7 +35,7 @@ public class ContactIO<V, A extends V, O extends V, AB, OB> extends ModelIO<Cont
     @Override
     public Contact readObject(O node) {
         IoLogging.logger.singleJsonNode("Contact");
-        Contact contact = new ContactImpl();
+        Contact contact = OASFactory.createContact();
         contact.setName(jsonIO().getString(node, PROP_NAME));
         contact.setUrl(jsonIO().getString(node, PROP_URL));
         contact.setEmail(jsonIO().getString(node, PROP_EMAIL));

@@ -2,10 +2,10 @@ package io.smallrye.openapi.runtime.io.info;
 
 import java.util.Optional;
 
+import org.eclipse.microprofile.openapi.OASFactory;
 import org.eclipse.microprofile.openapi.models.info.License;
 import org.jboss.jandex.AnnotationInstance;
 
-import io.smallrye.openapi.api.models.info.LicenseImpl;
 import io.smallrye.openapi.runtime.io.IOContext;
 import io.smallrye.openapi.runtime.io.IOContext.OpenApiVersion;
 import io.smallrye.openapi.runtime.io.IoLogging;
@@ -25,7 +25,7 @@ public class LicenseIO<V, A extends V, O extends V, AB, OB> extends ModelIO<Lice
     @Override
     public License read(AnnotationInstance annotation) {
         IoLogging.logger.singleAnnotation("@License");
-        License license = new LicenseImpl();
+        License license = OASFactory.createLicense();
         license.setName(value(annotation, PROP_NAME));
         license.setUrl(value(annotation, PROP_URL));
         license.setIdentifier(value(annotation, PROP_IDENTIFIER));
@@ -36,7 +36,7 @@ public class LicenseIO<V, A extends V, O extends V, AB, OB> extends ModelIO<Lice
     @Override
     public License readObject(O node) {
         IoLogging.logger.singleJsonNode("License");
-        License license = new LicenseImpl();
+        License license = OASFactory.createLicense();
         license.setName(jsonIO().getString(node, PROP_NAME));
         license.setUrl(jsonIO().getString(node, PROP_URL));
         if (openApiVersion() == OpenApiVersion.V3_1) {

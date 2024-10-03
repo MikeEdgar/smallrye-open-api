@@ -2,10 +2,10 @@ package io.smallrye.openapi.runtime.io.security;
 
 import java.util.Optional;
 
+import org.eclipse.microprofile.openapi.OASFactory;
 import org.eclipse.microprofile.openapi.models.security.SecurityScheme;
 import org.jboss.jandex.AnnotationInstance;
 
-import io.smallrye.openapi.api.models.security.SecuritySchemeImpl;
 import io.smallrye.openapi.runtime.io.IOContext;
 import io.smallrye.openapi.runtime.io.IOContext.OpenApiVersion;
 import io.smallrye.openapi.runtime.io.IoLogging;
@@ -40,7 +40,7 @@ public class SecuritySchemeIO<V, A extends V, O extends V, AB, OB> extends MapMo
     @Override
     public SecurityScheme read(AnnotationInstance annotation) {
         IoLogging.logger.singleAnnotation("@SecurityScheme");
-        SecurityScheme securityScheme = new SecuritySchemeImpl();
+        SecurityScheme securityScheme = OASFactory.createSecurityScheme();
         securityScheme.setType(enumValue(annotation, PROP_TYPE, SecurityScheme.Type.class));
         securityScheme.setDescription(value(annotation, PROP_DESCRIPTION));
         securityScheme.setName(value(annotation, PROP_API_KEY_NAME));
@@ -56,7 +56,7 @@ public class SecuritySchemeIO<V, A extends V, O extends V, AB, OB> extends MapMo
 
     @Override
     public SecurityScheme readObject(O node) {
-        SecurityScheme model = new SecuritySchemeImpl();
+        SecurityScheme model = OASFactory.createSecurityScheme();
         model.setRef(readReference(node));
         model.setType(enumValue(jsonIO().getValue(node, PROP_TYPE), SecurityScheme.Type.class));
         model.setDescription(jsonIO().getString(node, PROP_DESCRIPTION));

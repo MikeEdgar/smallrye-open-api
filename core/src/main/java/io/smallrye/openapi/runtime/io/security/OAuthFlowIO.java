@@ -2,10 +2,10 @@ package io.smallrye.openapi.runtime.io.security;
 
 import java.util.Optional;
 
+import org.eclipse.microprofile.openapi.OASFactory;
 import org.eclipse.microprofile.openapi.models.security.OAuthFlow;
 import org.jboss.jandex.AnnotationInstance;
 
-import io.smallrye.openapi.api.models.security.OAuthFlowImpl;
 import io.smallrye.openapi.runtime.io.IOContext;
 import io.smallrye.openapi.runtime.io.IoLogging;
 import io.smallrye.openapi.runtime.io.ModelIO;
@@ -25,7 +25,7 @@ public class OAuthFlowIO<V, A extends V, O extends V, AB, OB> extends ModelIO<OA
     @Override
     public OAuthFlow read(AnnotationInstance annotation) {
         IoLogging.logger.singleAnnotation("@OAuthFlow");
-        OAuthFlow flow = new OAuthFlowImpl();
+        OAuthFlow flow = OASFactory.createOAuthFlow();
         flow.setAuthorizationUrl(value(annotation, PROP_AUTHORIZATION_URL));
         flow.setTokenUrl(value(annotation, PROP_TOKEN_URL));
         flow.setRefreshUrl(value(annotation, PROP_REFRESH_URL));
@@ -37,7 +37,7 @@ public class OAuthFlowIO<V, A extends V, O extends V, AB, OB> extends ModelIO<OA
     @Override
     public OAuthFlow readObject(O node) {
         IoLogging.logger.singleJsonObject("OAuthFlow");
-        OAuthFlow flow = new OAuthFlowImpl();
+        OAuthFlow flow = OASFactory.createOAuthFlow();
         flow.setAuthorizationUrl(jsonIO().getString(node, PROP_AUTHORIZATION_URL));
         flow.setTokenUrl(jsonIO().getString(node, PROP_TOKEN_URL));
         flow.setRefreshUrl(jsonIO().getString(node, PROP_REFRESH_URL));

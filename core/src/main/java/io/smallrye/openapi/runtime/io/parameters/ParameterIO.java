@@ -7,22 +7,21 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.eclipse.microprofile.openapi.OASFactory;
 import org.eclipse.microprofile.openapi.annotations.enums.Explode;
 import org.eclipse.microprofile.openapi.models.parameters.Parameter;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
 
-import io.smallrye.openapi.api.models.parameters.ParameterImpl;
+import io.smallrye.openapi.api.Extensions;
 import io.smallrye.openapi.runtime.io.IOContext;
 import io.smallrye.openapi.runtime.io.IOContext.OpenApiVersion;
 import io.smallrye.openapi.runtime.io.IoLogging;
 import io.smallrye.openapi.runtime.io.MapModelIO;
 import io.smallrye.openapi.runtime.io.Names;
 import io.smallrye.openapi.runtime.io.ReferenceIO;
-import io.smallrye.openapi.runtime.io.ReferenceType;
 import io.smallrye.openapi.runtime.io.media.ContentIO;
 import io.smallrye.openapi.runtime.scanner.spi.AnnotationScannerContext;
-import io.smallrye.openapi.runtime.util.JandexUtil;
 
 public class ParameterIO<V, A extends V, O extends V, AB, OB> extends MapModelIO<Parameter, V, A, O, AB, OB>
         implements ReferenceIO<V, A, O, AB, OB> {
@@ -65,48 +64,88 @@ public class ParameterIO<V, A extends V, O extends V, AB, OB> extends MapModelIO
     }
 
     @Override
+    protected boolean setProperty(Parameter model, AnnotationValue value) {
+        switch (value.name()) {
+            case PROP_IN:
+                model.setIn(scannerContext().annotations().enumValue(Parameter.In.class, value));
+                return true;
+            case PROP_HIDDEN:
+                Extensions.setHidden(model, Boolean.TRUE);
+                return true;
+            case PROP_STYLE:
+                model.setStyle(scannerContext().annotations().enumValue(Parameter.Style.class, value));
+                return true;
+            case PROP_EXPLODE:
+                model.setExplode(readExplode(scannerContext(), value.asString()));
+                return true;
+            case PROP_SCHEMA:
+                model.setSchema(schemaIO().read(value));
+                return true;
+            case PROP_CONTENT:
+                model.setContent(contentIO().read(value, ContentIO.Direction.PARAMETER));
+                return true;
+            case PROP_EXAMPLES:
+                model.setExamples(exampleObjectIO().readMap(value));
+                return true;
+            case PROP_EXAMPLE:
+                model.setExample(exampleObjectIO().parseValue(value.asString()));
+                return true;
+            default:
+                break;
+        }
+
+        return false;
+    }
+
+    @Override
     public Parameter read(AnnotationInstance annotation) {
         IoLogging.logger.singleAnnotation("@Parameter");
-        ParameterImpl parameter = new ParameterImpl();
-        parameter.setName(value(annotation, PROP_NAME));
-        parameter.setIn(enumValue(annotation, PROP_IN, Parameter.In.class));
-
-        // Params can be hidden. Skip if that's the case.
-        if (Boolean.TRUE.equals(value(annotation, PROP_HIDDEN))) {
-            ParameterImpl.setHidden(parameter, true);
-            return parameter;
-        }
-
-        parameter.setDescription(value(annotation, PROP_DESCRIPTION));
-        parameter.setRequired(value(annotation, PROP_REQUIRED));
-        parameter.setDeprecated(value(annotation, PROP_DEPRECATED));
-        parameter.setAllowEmptyValue(value(annotation, PROP_ALLOW_EMPTY_VALUE));
-        parameter.setStyle(enumValue(annotation, PROP_STYLE, Parameter.Style.class));
-        parameter.setExplode(readExplode(scannerContext(), annotation));
-        parameter.setAllowReserved(value(annotation, PROP_ALLOW_RESERVED));
-        parameter.setSchema(schemaIO().read(annotation.value(PROP_SCHEMA)));
-        parameter.setContent(contentIO().read(annotation.value(PROP_CONTENT), ContentIO.Direction.PARAMETER));
-        parameter.setExamples(exampleObjectIO().readMap(annotation.value(PROP_EXAMPLES)));
-        parameter.setExample(exampleObjectIO().parseValue(value(annotation, PROP_EXAMPLE)));
-        parameter.setRef(ReferenceType.PARAMETER.refValue(annotation));
+        Parameter parameter = read(Parameter.class, annotation);
 
         if (annotation.target() != null) {
-            switch (annotation.target().kind()) {
-                case FIELD:
-                case METHOD_PARAMETER:
-                    /*
-                     * Limit to field and parameter. Extensions on methods are ambiguous and pertain
-                     * instead to the operation.
-                     *
-                     */
-                    parameter.setExtensions(extensionIO().readExtensible(annotation));
-                    break;
-                default:
-                    break;
-            }
-
-            parameter.setParamRef(JandexUtil.createUniqueAnnotationTargetRef(annotation.target()));
+            Extensions.setParamRef(parameter, annotation.target());
         }
+
+//        Parameter parameter = OASFactory.createParameter();
+//        parameter.setName(value(annotation, PROP_NAME));
+//        parameter.setIn(enumValue(annotation, PROP_IN, Parameter.In.class));
+//
+//        // Params can be hidden. Skip if that's the case.
+//        if (Boolean.TRUE.equals(value(annotation, PROP_HIDDEN))) {
+//            Extensions.setHidden(parameter, Boolean.TRUE);
+//            return parameter;
+//        }
+//
+//        parameter.setDescription(value(annotation, PROP_DESCRIPTION));
+//        parameter.setRequired(value(annotation, PROP_REQUIRED));
+//        parameter.setDeprecated(value(annotation, PROP_DEPRECATED));
+//        parameter.setAllowEmptyValue(value(annotation, PROP_ALLOW_EMPTY_VALUE));
+//        parameter.setStyle(enumValue(annotation, PROP_STYLE, Parameter.Style.class));
+//        parameter.setExplode(readExplode(scannerContext(), annotation));
+//        parameter.setAllowReserved(value(annotation, PROP_ALLOW_RESERVED));
+//        parameter.setSchema(schemaIO().read(annotation.value(PROP_SCHEMA)));
+//        parameter.setContent(contentIO().read(annotation.value(PROP_CONTENT), ContentIO.Direction.PARAMETER));
+//        parameter.setExamples(exampleObjectIO().readMap(annotation.value(PROP_EXAMPLES)));
+//        parameter.setExample(exampleObjectIO().parseValue(value(annotation, PROP_EXAMPLE)));
+//        parameter.setRef(ReferenceType.PARAMETER.refValue(annotation));
+//
+//        if (annotation.target() != null) {
+//            switch (annotation.target().kind()) {
+//                case FIELD:
+//                case METHOD_PARAMETER:
+//                    /*
+//                     * Limit to field and parameter. Extensions on methods are ambiguous and pertain
+//                     * instead to the operation.
+//                     *
+//                     */
+//                    parameter.setExtensions(extensionIO().readExtensible(annotation));
+//                    break;
+//                default:
+//                    break;
+//            }
+//
+//            Extensions.setParamRef(parameter, annotation.target());
+//        }
 
         return parameter;
     }
@@ -130,7 +169,7 @@ public class ParameterIO<V, A extends V, O extends V, AB, OB> extends MapModelIO
     @Override
     public Parameter readObject(O node) {
         IoLogging.logger.singleJsonObject("Parameter");
-        Parameter parameter = new ParameterImpl();
+        Parameter parameter = OASFactory.createParameter();
         parameter.setName(jsonIO().getString(node, PROP_NAME));
         parameter.setIn(enumValue(jsonIO().getValue(node, PROP_IN), Parameter.In.class));
         parameter.setDescription(jsonIO().getString(node, PROP_DESCRIPTION));
@@ -194,8 +233,25 @@ public class ParameterIO<V, A extends V, O extends V, AB, OB> extends MapModelIO
      *
      * @param enumValue
      */
-    private static Boolean readExplode(AnnotationScannerContext context, AnnotationInstance parameterAnnoatation) {
-        Explode explode = context.annotations().enumValue(parameterAnnoatation, PROP_EXPLODE, Explode.class);
+//    private static Boolean readExplode(AnnotationScannerContext context, AnnotationInstance parameterAnnoatation) {
+//        Explode explode = context.annotations().enumValue(parameterAnnoatation, PROP_EXPLODE, Explode.class);
+//
+//        if (explode == Explode.TRUE) {
+//            return Boolean.TRUE;
+//        }
+//        if (explode == Explode.FALSE) {
+//            return Boolean.FALSE;
+//        }
+//        return null; // NOSONAR
+//    }
+
+    /**
+     * Converts from an Explode enum to a true/false/null.
+     *
+     * @param enumValue
+     */
+    private static Boolean readExplode(AnnotationScannerContext context, String value) {
+        Explode explode = context.annotations().enumValue(Explode.class, value);
 
         if (explode == Explode.TRUE) {
             return Boolean.TRUE;
@@ -203,6 +259,7 @@ public class ParameterIO<V, A extends V, O extends V, AB, OB> extends MapModelIO
         if (explode == Explode.FALSE) {
             return Boolean.FALSE;
         }
+
         return null; // NOSONAR
     }
 

@@ -12,7 +12,8 @@ import io.smallrye.openapi.runtime.util.ModelUtil;
  *
  * @author eric.wittmann@gmail.com
  */
-public abstract class ExtensibleImpl<T extends Extensible<T>> implements Extensible<T>, ModelImpl {
+@Deprecated(since = "4.0", forRemoval = true)
+public abstract class ExtensibleImpl<T extends Extensible<T>> implements Extensible<T>, ModelImpl { // NOSONAR
 
     private Map<String, Object> extensions;
 

@@ -2,10 +2,10 @@ package io.smallrye.openapi.runtime.io.media;
 
 import java.util.Optional;
 
+import org.eclipse.microprofile.openapi.OASFactory;
 import org.eclipse.microprofile.openapi.models.examples.Example;
 import org.jboss.jandex.AnnotationInstance;
 
-import io.smallrye.openapi.api.models.examples.ExampleImpl;
 import io.smallrye.openapi.runtime.io.IOContext;
 import io.smallrye.openapi.runtime.io.IOContext.OpenApiVersion;
 import io.smallrye.openapi.runtime.io.IoLogging;
@@ -30,7 +30,7 @@ public class ExampleObjectIO<V, A extends V, O extends V, AB, OB> extends MapMod
     @Override
     public Example read(AnnotationInstance annotation) {
         IoLogging.logger.singleAnnotation("@ExampleObject");
-        Example example = new ExampleImpl();
+        Example example = OASFactory.createExample();
         example.setRef(ReferenceType.EXAMPLE.refValue(annotation));
         example.setSummary(value(annotation, PROP_SUMMARY));
         example.setDescription(value(annotation, PROP_DESCRIPTION));
@@ -43,7 +43,7 @@ public class ExampleObjectIO<V, A extends V, O extends V, AB, OB> extends MapMod
     @Override
     public Example readObject(O node) {
         IoLogging.logger.singleJsonNode("ExampleObjectIO");
-        Example example = new ExampleImpl();
+        Example example = OASFactory.createExample();
         example.setRef(readReference(node));
         example.setSummary(jsonIO().getString(node, PROP_SUMMARY));
         example.setDescription(jsonIO().getString(node, PROP_DESCRIPTION));

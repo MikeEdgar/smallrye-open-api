@@ -7,12 +7,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.eclipse.microprofile.openapi.OASFactory;
 import org.eclipse.microprofile.openapi.models.servers.Server;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget;
 import org.jboss.jandex.AnnotationValue;
 
-import io.smallrye.openapi.api.models.servers.ServerImpl;
 import io.smallrye.openapi.runtime.io.IOContext;
 import io.smallrye.openapi.runtime.io.IoLogging;
 import io.smallrye.openapi.runtime.io.ModelIO;
@@ -53,7 +53,7 @@ public class ServerIO<V, A extends V, O extends V, AB, OB> extends ModelIO<Serve
     @Override
     public Server read(AnnotationInstance annotation) {
         IoLogging.logger.singleAnnotation("@Server");
-        Server server = new ServerImpl();
+        Server server = OASFactory.createServer();
         server.setUrl(value(annotation, PROP_URL));
         server.setDescription(value(annotation, PROP_DESCRIPTION));
         server.setVariables(serverVariableIO().readMap(annotation.value(PROP_VARIABLES)));
@@ -87,7 +87,7 @@ public class ServerIO<V, A extends V, O extends V, AB, OB> extends ModelIO<Serve
     @Override
     public Server readObject(O node) {
         IoLogging.logger.singleJsonNode("Server");
-        Server server = new ServerImpl();
+        Server server = OASFactory.createServer();
         server.setUrl(jsonIO().getString(node, PROP_URL));
         server.setDescription(jsonIO().getString(node, PROP_DESCRIPTION));
         server.setVariables(serverVariableIO().readMap(jsonIO().getValue(node, PROP_VARIABLES)));

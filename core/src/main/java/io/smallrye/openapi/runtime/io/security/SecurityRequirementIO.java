@@ -8,12 +8,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.eclipse.microprofile.openapi.OASFactory;
 import org.eclipse.microprofile.openapi.models.security.SecurityRequirement;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget;
 import org.jboss.jandex.AnnotationValue;
 
-import io.smallrye.openapi.api.models.security.SecurityRequirementImpl;
 import io.smallrye.openapi.runtime.io.IOContext;
 import io.smallrye.openapi.runtime.io.IoLogging;
 import io.smallrye.openapi.runtime.io.ModelIO;
@@ -50,7 +50,7 @@ public class SecurityRequirementIO<V, A extends V, O extends V, AB, OB> extends 
     @Override
     public SecurityRequirement read(AnnotationInstance annotation) {
         Map.Entry<String, List<String>> scheme = readEntry(annotation);
-        return new SecurityRequirementImpl().addScheme(scheme.getKey(), scheme.getValue());
+        return OASFactory.createSecurityRequirement().addScheme(scheme.getKey(), scheme.getValue());
     }
 
     Map.Entry<String, List<String>> readEntry(AnnotationInstance annotation) {
@@ -82,7 +82,7 @@ public class SecurityRequirementIO<V, A extends V, O extends V, AB, OB> extends 
 
     @Override
     public SecurityRequirement readObject(O node) {
-        SecurityRequirement requirement = new SecurityRequirementImpl();
+        SecurityRequirement requirement = OASFactory.createSecurityRequirement();
 
         jsonIO().properties(node).forEach(field -> {
             String schemeName = field.getKey();

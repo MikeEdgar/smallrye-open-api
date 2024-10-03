@@ -7,14 +7,13 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.eclipse.microprofile.openapi.OASFactory;
 import org.eclipse.microprofile.openapi.annotations.callbacks.CallbackOperation;
 import org.eclipse.microprofile.openapi.models.Operation;
 import org.eclipse.microprofile.openapi.models.PathItem;
 import org.eclipse.microprofile.openapi.models.PathItem.HttpMethod;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
-
-import io.smallrye.openapi.api.models.PathItemImpl;
 
 public class PathItemIO<V, A extends V, O extends V, AB, OB> extends MapModelIO<PathItem, V, A, O, AB, OB>
         implements ReferenceIO<V, A, O, AB, OB> {
@@ -39,7 +38,7 @@ public class PathItemIO<V, A extends V, O extends V, AB, OB> extends MapModelIO<
     @Override
     public PathItem read(AnnotationInstance annotation) {
         IoLogging.logger.singleAnnotation("@PathItem");
-        PathItem pathItem = new PathItemImpl();
+        PathItem pathItem = OASFactory.createPathItem();
 
         pathItem.setRef(ReferenceType.PATH_ITEM.refValue(annotation));
         pathItem.setDescription(value(annotation, PROP_DESCRIPTION));
@@ -62,7 +61,7 @@ public class PathItemIO<V, A extends V, O extends V, AB, OB> extends MapModelIO<
      * @return the path item
      */
     public PathItem readCallbackOperations(AnnotationInstance[] annotations) {
-        PathItem pathItem = new PathItemImpl();
+        PathItem pathItem = OASFactory.createPathItem();
 
         readOperationsInto(pathItem, annotations, callbackOperationIO());
 
@@ -84,7 +83,7 @@ public class PathItemIO<V, A extends V, O extends V, AB, OB> extends MapModelIO<
     @Override
     public PathItem readObject(O node) {
         IoLogging.logger.singleJsonNode("PathItem");
-        PathItem pathItem = new PathItemImpl();
+        PathItem pathItem = OASFactory.createPathItem();
         pathItem.setRef(readReference(node));
         pathItem.setSummary(jsonIO().getString(node, PROP_SUMMARY));
         pathItem.setDescription(jsonIO().getString(node, PROP_DESCRIPTION));

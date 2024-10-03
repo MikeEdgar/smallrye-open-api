@@ -2,10 +2,10 @@ package io.smallrye.openapi.runtime.io.info;
 
 import java.util.Optional;
 
+import org.eclipse.microprofile.openapi.OASFactory;
 import org.eclipse.microprofile.openapi.models.info.Info;
 import org.jboss.jandex.AnnotationInstance;
 
-import io.smallrye.openapi.api.models.info.InfoImpl;
 import io.smallrye.openapi.runtime.io.IOContext;
 import io.smallrye.openapi.runtime.io.IOContext.OpenApiVersion;
 import io.smallrye.openapi.runtime.io.IoLogging;
@@ -29,7 +29,7 @@ public class InfoIO<V, A extends V, O extends V, AB, OB> extends ModelIO<Info, V
     @Override
     public Info read(AnnotationInstance annotation) {
         IoLogging.logger.annotation("@Info");
-        Info info = new InfoImpl();
+        Info info = OASFactory.createInfo();
         info.setTitle(value(annotation, PROP_TITLE));
         info.setDescription(value(annotation, PROP_DESCRIPTION));
         info.setSummary(value(annotation, PROP_SUMMARY));
@@ -50,7 +50,7 @@ public class InfoIO<V, A extends V, O extends V, AB, OB> extends ModelIO<Info, V
     @Override
     public Info readObject(O node) {
         IoLogging.logger.singleJsonNode("Info");
-        Info info = new InfoImpl();
+        Info info = OASFactory.createInfo();
         info.setTitle(jsonIO().getString(node, PROP_TITLE));
         info.setDescription(jsonIO().getString(node, PROP_DESCRIPTION));
         if (openApiVersion() == OpenApiVersion.V3_1) {

@@ -2,10 +2,10 @@ package io.smallrye.openapi.runtime.io;
 
 import java.util.Optional;
 
+import org.eclipse.microprofile.openapi.OASFactory;
 import org.eclipse.microprofile.openapi.models.Components;
 import org.jboss.jandex.AnnotationInstance;
 
-import io.smallrye.openapi.api.models.ComponentsImpl;
 import io.smallrye.openapi.runtime.io.IOContext.OpenApiVersion;
 import io.smallrye.openapi.runtime.io.callbacks.CallbackIO;
 import io.smallrye.openapi.runtime.io.security.SecuritySchemeIO;
@@ -38,7 +38,7 @@ public class ComponentsIO<V, A extends V, O extends V, AB, OB> extends ModelIO<C
     @Override
     public Components read(AnnotationInstance annotation) {
         IoLogging.logger.singleAnnotation("@Components");
-        Components components = new ComponentsImpl();
+        Components components = OASFactory.createComponents();
         components.setCallbacks(callbackIO().readMap(annotation.value(PROP_CALLBACKS)));
         components.setExamples(exampleObjectIO().readMap(annotation.value(PROP_EXAMPLES)));
         components.setHeaders(headerIO().readMap(annotation.value(PROP_HEADERS)));
@@ -57,7 +57,7 @@ public class ComponentsIO<V, A extends V, O extends V, AB, OB> extends ModelIO<C
     @Override
     public Components readObject(O node) {
         IoLogging.logger.singleJsonNode("Components");
-        Components components = new ComponentsImpl();
+        Components components = OASFactory.createComponents();
         components.setCallbacks(callbackIO().readMap(jsonIO().getValue(node, PROP_CALLBACKS)));
         components.setExamples(exampleObjectIO().readMap(jsonIO().getValue(node, PROP_EXAMPLES)));
         components.setHeaders(headerIO().readMap(jsonIO().getValue(node, PROP_HEADERS)));

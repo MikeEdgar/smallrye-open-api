@@ -2,12 +2,11 @@ package io.smallrye.openapi.runtime.io.callbacks;
 
 import java.util.Optional;
 
+import org.eclipse.microprofile.openapi.OASFactory;
 import org.eclipse.microprofile.openapi.models.callbacks.Callback;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.DotName;
 
-import io.smallrye.openapi.api.models.PathItemImpl;
-import io.smallrye.openapi.api.models.callbacks.CallbackImpl;
 import io.smallrye.openapi.runtime.io.IOContext;
 import io.smallrye.openapi.runtime.io.IoLogging;
 import io.smallrye.openapi.runtime.io.MapModelIO;
@@ -30,14 +29,14 @@ public class CallbackIO<V, A extends V, O extends V, AB, OB> extends MapModelIO<
     @Override
     public Callback read(AnnotationInstance annotation) {
         IoLogging.logger.singleAnnotation("@Callback");
-        Callback callback = new CallbackImpl();
+        Callback callback = OASFactory.createCallback();
         callback.setRef(ReferenceType.CALLBACK.refValue(annotation));
 
         Optional.ofNullable(this.<String> value(annotation, PROP_PATH_ITEM_REF))
                 .map(ReferenceType.PATH_ITEM::referenceOf)
                 .ifPresent(ref -> callback.addPathItem(
                         value(annotation, PROP_CALLBACK_URL_EXPRESSION),
-                        new PathItemImpl().ref(ref)));
+                        OASFactory.createPathItem().ref(ref)));
 
         Optional.ofNullable(value(annotation, PROP_OPERATIONS))
                 .map(AnnotationInstance[].class::cast)
@@ -53,7 +52,7 @@ public class CallbackIO<V, A extends V, O extends V, AB, OB> extends MapModelIO<
     @Override
     public Callback readObject(O node) {
         IoLogging.logger.singleJsonNode("Callback");
-        Callback callback = new CallbackImpl();
+        Callback callback = OASFactory.createCallback();
         callback.setRef(readReference(node));
 
         jsonIO().properties(node)

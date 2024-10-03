@@ -2,14 +2,15 @@ package io.smallrye.openapi.runtime.io.media;
 
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
+import org.eclipse.microprofile.openapi.OASFactory;
 import org.eclipse.microprofile.openapi.models.media.Discriminator;
 import org.eclipse.microprofile.openapi.models.media.Schema;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.Type;
 
-import io.smallrye.openapi.api.models.media.DiscriminatorImpl;
 import io.smallrye.openapi.runtime.io.IOContext;
 import io.smallrye.openapi.runtime.io.IoLogging;
 import io.smallrye.openapi.runtime.io.ModelIO;
@@ -50,7 +51,7 @@ public class DiscriminatorIO<V, A extends V, O extends V, AB, OB> extends ModelI
             return null;
         }
 
-        Discriminator discriminator = new DiscriminatorImpl();
+        Discriminator discriminator = OASFactory.createDiscriminator();
 
         /*
          * The name is required by OAS, however MP OpenAPI allows for a default
@@ -64,6 +65,7 @@ public class DiscriminatorIO<V, A extends V, O extends V, AB, OB> extends ModelI
         if (mapping != null) {
             IoLogging.logger.annotationsList("@DiscriminatorMapping");
             Arrays.stream(mapping).map(this::readMapping)
+                    .filter(Objects::nonNull)
                     .forEach(e -> discriminator.addMapping(e.getKey(), e.getValue()));
         }
 
@@ -88,12 +90,16 @@ public class DiscriminatorIO<V, A extends V, O extends V, AB, OB> extends ModelI
             propertyValue = ModelUtil.nameFromRef(schemaRef);
         }
 
-        return entry(propertyValue, schemaRef);
+        if (propertyValue != null && schemaRef != null) {
+            return entry(propertyValue, schemaRef);
+        }
+
+        return null;
     }
 
     @Override
     public Discriminator readObject(O node) {
-        Discriminator discriminator = new DiscriminatorImpl();
+        Discriminator discriminator = OASFactory.createDiscriminator();
         discriminator.setPropertyName(jsonIO().getString(node, PROP_PROPERTY_NAME));
         discriminator.setMapping(jsonIO().getObject(node, PROP_MAPPING)
                 .map(jsonIO()::properties)
