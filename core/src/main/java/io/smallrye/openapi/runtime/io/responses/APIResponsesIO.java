@@ -5,13 +5,13 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 
+import org.eclipse.microprofile.openapi.OASFactory;
 import org.eclipse.microprofile.openapi.models.responses.APIResponse;
 import org.eclipse.microprofile.openapi.models.responses.APIResponses;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget;
 import org.jboss.jandex.AnnotationValue;
 
-import io.smallrye.openapi.api.models.responses.APIResponsesImpl;
 import io.smallrye.openapi.runtime.io.IOContext;
 import io.smallrye.openapi.runtime.io.IoLogging;
 import io.smallrye.openapi.runtime.io.ModelIO;
@@ -78,7 +78,7 @@ public class APIResponsesIO<V, A extends V, O extends V, AB, OB> extends ModelIO
      */
     public APIResponses read(AnnotationInstance[] annotations) {
         IoLogging.logger.annotationsListInto("@APIResponse", "APIResponses model");
-        APIResponses responses = new APIResponsesImpl();
+        APIResponses responses = OASFactory.createAPIResponses();
 
         for (AnnotationInstance nested : annotations) {
             apiResponseIO().responseCode(nested)
@@ -92,7 +92,7 @@ public class APIResponsesIO<V, A extends V, O extends V, AB, OB> extends ModelIO
     public APIResponses readObject(O node) {
         IoLogging.logger.jsonList("APIResponse");
 
-        APIResponses model = new APIResponsesImpl();
+        APIResponses model = OASFactory.createAPIResponses();
         model.setDefaultValue(apiResponseIO().readValue(jsonIO().getValue(node, PROP_DEFAULT)));
         model.setExtensions(extensionIO().readMap(node));
 

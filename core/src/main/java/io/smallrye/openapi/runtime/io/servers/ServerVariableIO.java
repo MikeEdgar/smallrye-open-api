@@ -4,10 +4,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Optional;
 
+import org.eclipse.microprofile.openapi.OASFactory;
 import org.eclipse.microprofile.openapi.models.servers.ServerVariable;
 import org.jboss.jandex.AnnotationInstance;
 
-import io.smallrye.openapi.api.models.servers.ServerVariableImpl;
 import io.smallrye.openapi.runtime.io.IOContext;
 import io.smallrye.openapi.runtime.io.IoLogging;
 import io.smallrye.openapi.runtime.io.MapModelIO;
@@ -29,7 +29,7 @@ public class ServerVariableIO<V, A extends V, O extends V, AB, OB> extends MapMo
     @Override
     public ServerVariable read(AnnotationInstance annotation) {
         IoLogging.logger.singleAnnotation("@ServerVariable");
-        ServerVariable variable = new ServerVariableImpl();
+        ServerVariable variable = OASFactory.createServerVariable();
         variable.setDescription(value(annotation, PROP_DESCRIPTION));
         String[] enumeration = value(annotation, PROP_ENUMERATION);
         if (enumeration != null) {
@@ -42,7 +42,7 @@ public class ServerVariableIO<V, A extends V, O extends V, AB, OB> extends MapMo
 
     public ServerVariable readObject(O node) {
         IoLogging.logger.singleJsonNode("ServerVariable");
-        ServerVariable variable = new ServerVariableImpl();
+        ServerVariable variable = OASFactory.createServerVariable();
         variable.setEnumeration(jsonIO().getArray(node, PROP_ENUM, jsonIO()::asString).orElse(null));
         variable.setDefaultValue(jsonIO().getString(node, PROP_DEFAULT));
         variable.setDescription(jsonIO().getString(node, PROP_DESCRIPTION));

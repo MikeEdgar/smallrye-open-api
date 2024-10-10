@@ -2,10 +2,10 @@ package io.smallrye.openapi.runtime.io.headers;
 
 import java.util.Optional;
 
+import org.eclipse.microprofile.openapi.OASFactory;
 import org.eclipse.microprofile.openapi.models.headers.Header;
 import org.jboss.jandex.AnnotationInstance;
 
-import io.smallrye.openapi.api.models.headers.HeaderImpl;
 import io.smallrye.openapi.runtime.io.IOContext;
 import io.smallrye.openapi.runtime.io.IoLogging;
 import io.smallrye.openapi.runtime.io.MapModelIO;
@@ -34,7 +34,7 @@ public class HeaderIO<V, A extends V, O extends V, AB, OB> extends MapModelIO<He
     @Override
     public Header read(AnnotationInstance annotation) {
         IoLogging.logger.singleAnnotation("@Header");
-        Header header = new HeaderImpl();
+        Header header = OASFactory.createHeader();
         header.setRef(ReferenceType.HEADER.refValue(annotation));
         header.setDescription(value(annotation, PROP_DESCRIPTION));
         header.setSchema(schemaIO().read(annotation.value(PROP_SCHEMA)));
@@ -48,7 +48,7 @@ public class HeaderIO<V, A extends V, O extends V, AB, OB> extends MapModelIO<He
     @Override
     public Header readObject(O node) {
         IoLogging.logger.singleJsonNode("Header");
-        Header header = new HeaderImpl();
+        Header header = OASFactory.createHeader();
         header.setRef(readReference(node));
         header.setDescription(jsonIO().getString(node, PROP_DESCRIPTION));
         header.setSchema(schemaIO().readValue(jsonIO().getValue(node, PROP_SCHEMA)));

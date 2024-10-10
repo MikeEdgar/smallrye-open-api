@@ -2,11 +2,11 @@ package io.smallrye.openapi.runtime.io;
 
 import java.util.Optional;
 
+import org.eclipse.microprofile.openapi.OASFactory;
 import org.eclipse.microprofile.openapi.models.OpenAPI;
 import org.jboss.jandex.AnnotationInstance;
 
 import io.smallrye.openapi.api.SmallRyeOASConfig;
-import io.smallrye.openapi.api.models.OpenAPIImpl;
 import io.smallrye.openapi.runtime.io.IOContext.OpenApiVersion;
 
 public class OpenAPIDefinitionIO<V, A extends V, O extends V, AB, OB> extends ModelIO<OpenAPI, V, A, O, AB, OB> {
@@ -30,7 +30,7 @@ public class OpenAPIDefinitionIO<V, A extends V, O extends V, AB, OB> extends Mo
     public OpenAPI read(AnnotationInstance annotation) {
         IoLogging.logger.annotation("@OpenAPIDefinition");
 
-        OpenAPI openApi = new OpenAPIImpl();
+        OpenAPI openApi = OASFactory.createOpenAPI();
         openApi.setOpenapi(SmallRyeOASConfig.Defaults.VERSION);
         openApi.setInfo(infoIO().read(annotation.value(PROP_INFO)));
         openApi.setTags(tagIO().readList(annotation.value(PROP_TAGS)));
@@ -58,7 +58,7 @@ public class OpenAPIDefinitionIO<V, A extends V, O extends V, AB, OB> extends Mo
         String version = jsonIO().getString(node, PROP_OPENAPI);
         setOpenApiVersion(OpenApiVersion.fromString(version));
 
-        OpenAPI openApi = new OpenAPIImpl();
+        OpenAPI openApi = OASFactory.createOpenAPI();
         openApi.setOpenapi(version);
         openApi.setInfo(infoIO().readValue(jsonIO().getValue(node, PROP_INFO)));
         openApi.setTags(tagIO().readList(jsonIO().getValue(node, PROP_TAGS)));

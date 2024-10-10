@@ -11,11 +11,17 @@ import java.util.function.BinaryOperator;
 import java.util.function.Predicate;
 import java.util.stream.Collector;
 
+import org.eclipse.microprofile.openapi.OASFactory;
+import org.eclipse.microprofile.openapi.models.Constructible;
+import org.eclipse.microprofile.openapi.models.Extensible;
+import org.eclipse.microprofile.openapi.models.Reference;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget;
 import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.DotName;
 
+import io.smallrye.openapi.internal.models.BaseExtensibleModel;
+import io.smallrye.openapi.internal.models.BaseModel;
 import io.smallrye.openapi.runtime.io.IOContext.OpenApiVersion;
 import io.smallrye.openapi.runtime.io.callbacks.CallbackIO;
 import io.smallrye.openapi.runtime.io.callbacks.CallbackOperationIO;
@@ -204,6 +210,33 @@ public abstract class ModelIO<T, V, A extends V, O extends V, AB, OB> {
                 .map(AnnotationValue::asNested)
                 .map(this::read)
                 .orElse(null);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <C extends Constructible> T read(Class<C> type, AnnotationInstance annotation) {
+        BaseModel<C> model = (BaseModel<C>) OASFactory.createObject(type);
+
+        for (AnnotationValue annotationValue : annotation.values()) {
+            Object value = scannerContext().annotations().value(annotation, annotationValue);
+
+            if (value != null && !setProperty((T) model, annotationValue)) {
+                String name = annotationValue.name();
+
+                if ("ref".equals(name) && Reference.class.isAssignableFrom(type)) {
+                    model.setRef(annotationValue.asString());
+                } else if ("extensions".equals(name) && Extensible.class.isAssignableFrom(type)) {
+                    ((BaseExtensibleModel<?>) model).setExtensions(extensionIO().readExtensible(annotation));
+                } else {
+                    model.setProperty(name, value);
+                }
+            }
+        }
+
+        return (T) model;
+    }
+
+    protected boolean setProperty(T model, AnnotationValue value) {
+        return false;
     }
 
     public abstract T read(AnnotationInstance annotation);

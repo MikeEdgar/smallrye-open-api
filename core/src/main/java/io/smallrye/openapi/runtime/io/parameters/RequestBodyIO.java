@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.eclipse.microprofile.openapi.OASFactory;
 import org.eclipse.microprofile.openapi.models.media.Content;
 import org.eclipse.microprofile.openapi.models.media.MediaType;
 import org.eclipse.microprofile.openapi.models.parameters.RequestBody;
@@ -17,9 +18,7 @@ import org.jboss.jandex.AnnotationTarget.Kind;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.MethodInfo;
 
-import io.smallrye.openapi.api.models.media.ContentImpl;
-import io.smallrye.openapi.api.models.media.MediaTypeImpl;
-import io.smallrye.openapi.api.models.parameters.RequestBodyImpl;
+import io.smallrye.openapi.api.Extensions;
 import io.smallrye.openapi.runtime.io.IOContext;
 import io.smallrye.openapi.runtime.io.IOContext.OpenApiVersion;
 import io.smallrye.openapi.runtime.io.IoLogging;
@@ -62,7 +61,7 @@ public class RequestBodyIO<V, A extends V, O extends V, AB, OB> extends MapModel
     @Override
     public RequestBody read(AnnotationInstance annotation) {
         IoLogging.logger.singleAnnotation("@RequestBody");
-        RequestBodyImpl requestBody = new RequestBodyImpl();
+        RequestBody requestBody = OASFactory.createRequestBody();
         requestBody.setDescription(value(annotation, PROP_DESCRIPTION));
         requestBody.setContent(contentIO().read(annotation.value(PROP_CONTENT), ContentIO.Direction.INPUT));
         requestBody.setRef(ReferenceType.REQUEST_BODY.refValue(annotation));
@@ -71,7 +70,7 @@ public class RequestBodyIO<V, A extends V, O extends V, AB, OB> extends MapModel
         if (required != null) {
             requestBody.setRequired(required);
         } else {
-            requestBody.setRequiredDefault(Boolean.TRUE);
+            Extensions.setRequiredDefault(requestBody, Boolean.TRUE);
         }
         return requestBody;
     }
@@ -90,10 +89,10 @@ public class RequestBodyIO<V, A extends V, O extends V, AB, OB> extends MapModel
 
     private RequestBody readRequestSchema(AnnotationInstance annotation) {
         IoLogging.logger.singleAnnotation("@RequestBodySchema");
-        Content content = new ContentImpl();
+        Content content = OASFactory.createContent();
 
         for (String mediaType : scannerContext().getCurrentConsumes()) {
-            MediaType type = new MediaTypeImpl();
+            MediaType type = OASFactory.createMediaType();
             type.setSchema(SchemaFactory.typeToSchema(scannerContext(),
                     value(annotation, PROP_VALUE),
                     null,
@@ -101,12 +100,12 @@ public class RequestBodyIO<V, A extends V, O extends V, AB, OB> extends MapModel
             content.addMediaType(mediaType, type);
         }
 
-        return new RequestBodyImpl().content(content);
+        return OASFactory.createRequestBody().content(content);
     }
 
     @Override
     public RequestBody readObject(O node) {
-        RequestBody requestBody = new RequestBodyImpl();
+        RequestBody requestBody = OASFactory.createRequestBody();
         requestBody.setDescription(jsonIO().getString(node, PROP_DESCRIPTION));
         requestBody.setContent(contentIO().readValue(jsonIO().getValue(node, PROP_CONTENT)));
         requestBody.setRequired(jsonIO().getBoolean(node, PROP_REQUIRED));
