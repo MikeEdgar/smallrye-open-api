@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
+import org.eclipse.microprofile.openapi.OASFactory;
 import org.eclipse.microprofile.openapi.models.Components;
 import org.eclipse.microprofile.openapi.models.OpenAPI;
 import org.eclipse.microprofile.openapi.models.Operation;
@@ -22,11 +23,6 @@ import org.eclipse.microprofile.openapi.models.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.models.responses.APIResponses;
 import org.eclipse.microprofile.openapi.models.tags.Tag;
 
-import io.smallrye.openapi.api.models.ComponentsImpl;
-import io.smallrye.openapi.api.models.PathsImpl;
-import io.smallrye.openapi.api.models.media.ContentImpl;
-import io.smallrye.openapi.api.models.media.MediaTypeImpl;
-import io.smallrye.openapi.api.models.responses.APIResponsesImpl;
 import io.smallrye.openapi.api.util.MergeUtil;
 import io.smallrye.openapi.runtime.io.ReferenceType;
 import io.smallrye.openapi.runtime.io.media.ContentIO;
@@ -82,7 +78,7 @@ public class ModelUtil {
      */
     public static Components components(OpenAPI openApi) {
         if (openApi.getComponents() == null) {
-            openApi.setComponents(new ComponentsImpl());
+            openApi.setComponents(OASFactory.createComponents());
         }
         return openApi.getComponents();
     }
@@ -165,7 +161,7 @@ public class ModelUtil {
      */
     public static Paths paths(OpenAPI openApi) {
         if (openApi.getPaths() == null) {
-            openApi.setPaths(new PathsImpl());
+            openApi.setPaths(OASFactory.createPaths());
         }
         return openApi.getPaths();
     }
@@ -179,7 +175,7 @@ public class ModelUtil {
      */
     public static APIResponses responses(Operation operation) {
         if (operation.getResponses() == null) {
-            operation.setResponses(new APIResponsesImpl());
+            operation.setResponses(OASFactory.createAPIResponses());
         }
         return operation.getResponses();
     }
@@ -273,7 +269,7 @@ public class ModelUtil {
         Map<String, MediaType> mediaTypes = getMediaTypesOrEmpty(content);
         if (mediaTypes.isEmpty()) {
             for (String mediaTypeName : ContentIO.defaultMediaTypes()) {
-                MediaType mediaType = new MediaTypeImpl();
+                MediaType mediaType = OASFactory.createMediaType();
                 mediaType.setSchema(schema);
                 content.addMediaType(mediaTypeName, mediaType);
             }
@@ -315,7 +311,7 @@ public class ModelUtil {
     public static void setRequestBodySchema(RequestBody requestBody, Schema schema, String[] mediaTypes) {
         Content content = requestBody.getContent();
         if (content == null) {
-            content = new ContentImpl();
+            content = OASFactory.createContent();
             requestBody.setContent(content);
         }
         Map<String, MediaType> contentMediaTypes = getMediaTypesOrEmpty(content);
@@ -327,7 +323,7 @@ public class ModelUtil {
                 requestBodyTypes = ContentIO.defaultMediaTypes();
             }
             for (String mediaTypeName : requestBodyTypes) {
-                MediaType mediaType = new MediaTypeImpl();
+                MediaType mediaType = OASFactory.createMediaType();
                 mediaType.setSchema(schema);
                 content.addMediaType(mediaTypeName, mediaType);
             }
